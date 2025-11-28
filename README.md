@@ -134,6 +134,7 @@ Example quiz configuration (`config/quizz/example.json`):
       "question": "What is the correct answer?",
       "answers": ["No", "Yes", "No", "No"],
       "image": "https://images.unsplash.com/....",
+      "media": { "type": "audio", "url": "https://example.com/song.mp3" },
       "solution": 1,
       "cooldown": 5,
       "time": 15
@@ -148,10 +149,16 @@ Quiz Options:
 - `questions`: Array of question objects containing:
   - `question`: The question text
   - `answers`: Array of possible answers (2-4 options)
-  - `image`: Optional URL for question image
+  - `image`: Optional URL for question image (legacy; use `media` for new content)
+  - `media`: Optional media attachment `{ "type": "image" | "audio" | "video" | "youtube", "url": "<link>" }`. Examples:
+    - `{"type":"audio","url":"https://.../clip.mp3"}`
+    - `{"type":"video","url":"https://.../clip.mp4"}`
+    - `{"type":"youtube","url":"https://youtu.be/dQw4w9WgXcQ"}`
   - `solution`: Index of correct answer (0-based)
   - `cooldown`: Time in seconds before showing the question
   - `time`: Time in seconds allowed to answer
+
+Tip: You can now create and edit quizzes directly from the Manager UI (login at `/manager` and click “Manage”).
 
 ## 🎮 How to Play
 

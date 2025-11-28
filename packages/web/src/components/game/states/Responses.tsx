@@ -2,6 +2,7 @@
 
 import { ManagerStatusDataMap } from "@rahoot/common/types/game/status"
 import AnswerButton from "@rahoot/web/components/AnswerButton"
+import QuestionMedia from "@rahoot/web/components/game/QuestionMedia"
 import {
   ANSWERS_COLORS,
   ANSWERS_ICONS,
@@ -18,24 +19,28 @@ type Props = {
 }
 
 const Responses = ({
-  data: { question, answers, responses, correct },
+  data: { question, answers, responses, correct, image, media },
 }: Props) => {
   const [percentages, setPercentages] = useState<Record<string, string>>({})
   const [isMusicPlaying, setIsMusicPlaying] = useState(false)
+  const [isMediaPlaying, setIsMediaPlaying] = useState(false)
 
   const [sfxResults] = useSound(SFX_RESULTS_SOUND, {
     volume: 0.2,
   })
 
-  const [playMusic, { stop: stopMusic }] = useSound(SFX_ANSWERS_MUSIC, {
-    volume: 0.2,
-    onplay: () => {
-      setIsMusicPlaying(true)
+  const [playMusic, { stop: stopMusic, sound: answersMusic }] = useSound(
+    SFX_ANSWERS_MUSIC,
+    {
+      volume: 0.2,
+      onplay: () => {
+        setIsMusicPlaying(true)
+      },
+      onend: () => {
+        setIsMusicPlaying(false)
+      },
     },
-    onend: () => {
-      setIsMusicPlaying(false)
-    },
-  })
+  )
 
   useEffect(() => {
     stopMusic()
@@ -51,6 +56,14 @@ const Responses = ({
   }, [isMusicPlaying, playMusic])
 
   useEffect(() => {
+    if (!answersMusic) {
+      return
+    }
+
+    answersMusic.volume(isMediaPlaying ? 0.05 : 0.2)
+  }, [answersMusic, isMediaPlaying])
+
+  useEffect(() => {
     stopMusic()
   }, [playMusic, stopMusic])
 
@@ -60,6 +73,12 @@ const Responses = ({
         <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">
           {question}
         </h2>
+
+        <QuestionMedia
+          media={media || (image ? { type: "image", url: image } : undefined)}
+          alt={question}
+          onPlayChange={(playing) => setIsMediaPlaying(playing)}
+        />
 
         <div
           className={`mt-8 grid h-40 w-full max-w-3xl gap-4 px-2`}

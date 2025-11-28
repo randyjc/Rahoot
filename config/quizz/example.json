@@ -2,27 +2,52 @@
   "subject": "Example Quizz",
   "questions": [
     {
-      "question": "What is good answer ?",
-      "answers": ["No", "Good answer", "No", "No"],
+      "question": "Which soundtrack is this?",
+      "answers": [
+        "Nature sounds",
+        "Piano solo",
+        "Electronic beat",
+        "Chill guitar"
+      ],
+      "media": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/4/4c/Beethoven_Moonlight_1st_movement.ogg/Beethoven_Moonlight_1st_movement.ogg.mp3"
+      },
       "solution": 1,
       "cooldown": 5,
-      "time": 15
+      "time": 25
     },
     {
-      "question": "What is good answer with image ?",
-      "answers": ["No", "No", "No", "Good answer"],
-      "image": "https://placehold.co/600x400.png",
+      "question": "Which landmark appears in this clip?",
+      "answers": [
+        "Eiffel Tower",
+        "Sydney Opera House",
+        "Statue of Liberty",
+        "Golden Gate Bridge"
+      ],
+      "media": {
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw"
+      },
       "solution": 3,
       "cooldown": 5,
-      "time": 20
+      "time": 60
     },
     {
-      "question": "What is good answer with two answers ?",
-      "answers": ["Good answer", "No"],
-      "image": "https://placehold.co/600x400.png",
-      "solution": 0,
+      "question": "What kind of animal is featured here?",
+      "answers": [
+        "Dolphin",
+        "Panda",
+        "Horse",
+        "Penguin"
+      ],
+      "media": {
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=2k1qW3D0q6c"
+      },
+      "solution": 2,
       "cooldown": 5,
-      "time": 20
+      "time": 40
     }
   ]
 }

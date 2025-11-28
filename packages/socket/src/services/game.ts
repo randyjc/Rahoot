@@ -346,6 +346,7 @@ class Game {
     this.broadcastStatus(STATUS.SHOW_QUESTION, {
       question: question.question,
       image: question.image,
+    media: question.media,
       cooldown: question.cooldown,
     })
 
@@ -361,6 +362,7 @@ class Game {
       question: question.question,
       answers: question.answers,
       image: question.image,
+    media: question.media,
       time: question.time,
       totalPlayer: this.players.length,
     })
@@ -430,6 +432,7 @@ class Game {
       correct: question.solution,
       answers: question.answers,
       image: question.image,
+    media: question.media,
     })
 
     this.leaderboard = sortedPlayers

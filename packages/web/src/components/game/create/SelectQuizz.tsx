@@ -7,9 +7,10 @@ import toast from "react-hot-toast"
 type Props = {
   quizzList: QuizzWithId[]
   onSelect: (_id: string) => void
+  onManage?: () => void
 }
 
-const SelectQuizz = ({ quizzList, onSelect }: Props) => {
+const SelectQuizz = ({ quizzList, onSelect, onManage }: Props) => {
   const [selected, setSelected] = useState<string | null>(null)
 
   const handleSelect = (id: string) => () => {
@@ -32,8 +33,18 @@ const SelectQuizz = ({ quizzList, onSelect }: Props) => {
 
   return (
     <div className="z-10 flex w-full max-w-md flex-col gap-4 rounded-md bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Select a quizz</h1>
+        {onManage && (
+          <button
+            className="text-sm font-semibold text-primary underline"
+            onClick={onManage}
+          >
+            Manage
+          </button>
+        )}
+      </div>
       <div className="flex flex-col items-center justify-center">
-        <h1 className="mb-2 text-2xl font-bold">Select a quizz</h1>
         <div className="w-full space-y-2">
           {quizzList.map((quizz) => (
             <button

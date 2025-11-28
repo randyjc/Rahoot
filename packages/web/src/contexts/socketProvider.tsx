@@ -37,9 +37,26 @@ const SocketContext = createContext<SocketContextValue>({
 })
 
 const getSocketServer = async () => {
-  const res = await ky.get("/socket").json<{ url: string }>()
+  try {
+    const res = await ky.get("/socket").json<{ url: string }>()
+    if (res.url) return res.url
+  } catch (error) {
+    console.error("Failed to fetch socket url, using fallback", error)
+  }
 
-  return res.url
+  if (typeof window !== "undefined") {
+    const { protocol, hostname } = window.location
+    const isHttps = protocol === "https:"
+    const port =
+      window.location.port && window.location.port !== "3000"
+        ? window.location.port
+        : "3001"
+    const scheme = isHttps ? "https:" : "http:"
+
+    return `${scheme}//${hostname}:${port}`
+  }
+
+  return "http://localhost:3001"
 }
 
 const getClientId = (): string => {
@@ -75,12 +92,20 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const socketUrl = await getSocketServer()
 
+        const isHttps = socketUrl.startsWith("https")
+
         s = io(socketUrl, {
-          transports: ["websocket"],
+          transports: ["websocket", "polling"],
           autoConnect: false,
+          withCredentials: false,
+          forceNew: true,
+          secure: isHttps,
           auth: {
             clientId,
           },
+          reconnection: true,
+          reconnectionAttempts: 5,
+          timeout: 12000,
         })
 
         setSocket(s)
@@ -94,7 +119,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         })
 
         s.on("connect_error", (err) => {
-          console.error("Connection error:", err.message)
+          console.error("Connection error:", err.message, {
+            url: socketUrl,
+            transport: s?.io?.opts?.transports,
+          })
         })
       } catch (error) {
         console.error("Failed to initialize socket:", error)

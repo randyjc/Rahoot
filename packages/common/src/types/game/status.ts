@@ -1,4 +1,4 @@
-import { Player } from "."
+import { Player, QuestionMedia } from "."
 
 export const STATUS = {
   SHOW_ROOM: "SHOW_ROOM",
@@ -18,11 +18,17 @@ export type Status = (typeof STATUS)[keyof typeof STATUS]
 export type CommonStatusDataMap = {
   SHOW_START: { time: number; subject: string }
   SHOW_PREPARED: { totalAnswers: number; questionNumber: number }
-  SHOW_QUESTION: { question: string; image?: string; cooldown: number }
+  SHOW_QUESTION: {
+    question: string
+    image?: string
+    media?: QuestionMedia
+    cooldown: number
+  }
   SELECT_ANSWER: {
     question: string
     answers: string[]
     image?: string
+    media?: QuestionMedia
     time: number
     totalPlayer: number
   }
@@ -46,6 +52,7 @@ type ManagerExtraStatus = {
     correct: number
     answers: string[]
     image?: string
+    media?: QuestionMedia
   }
   SHOW_LEADERBOARD: { oldLeaderboard: Player[]; leaderboard: Player[] }
 }

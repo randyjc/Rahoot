@@ -2,6 +2,7 @@
 
 import { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import AnswerButton from "@rahoot/web/components/AnswerButton"
+import QuestionMedia from "@rahoot/web/components/game/QuestionMedia"
 import { useEvent, useSocket } from "@rahoot/web/contexts/socketProvider"
 import { usePlayerStore } from "@rahoot/web/stores/player"
 import {
@@ -20,7 +21,7 @@ type Props = {
 }
 
 const Answers = ({
-  data: { question, answers, image, time, totalPlayer },
+  data: { question, answers, image, media, time, totalPlayer },
 }: Props) => {
   const { gameId }: { gameId?: string } = useParams()
   const { socket } = useSocket()
@@ -28,16 +29,20 @@ const Answers = ({
 
   const [cooldown, setCooldown] = useState(time)
   const [totalAnswer, setTotalAnswer] = useState(0)
+  const [isMediaPlaying, setIsMediaPlaying] = useState(false)
 
   const [sfxPop] = useSound(SFX_ANSWERS_SOUND, {
     volume: 0.1,
   })
 
-  const [playMusic, { stop: stopMusic }] = useSound(SFX_ANSWERS_MUSIC, {
-    volume: 0.2,
-    interrupt: true,
-    loop: true,
-  })
+  const [playMusic, { stop: stopMusic, sound: answersMusic }] = useSound(
+    SFX_ANSWERS_MUSIC,
+    {
+      volume: 0.2,
+      interrupt: true,
+      loop: true,
+    },
+  )
 
   const handleAnswer = (answerKey: number) => () => {
     if (!player) {
@@ -61,6 +66,14 @@ const Answers = ({
     }
   }, [playMusic])
 
+  useEffect(() => {
+    if (!answersMusic) {
+      return
+    }
+
+    answersMusic.volume(isMediaPlaying ? 0.05 : 0.2)
+  }, [answersMusic, isMediaPlaying])
+
   useEvent("game:cooldown", (sec) => {
     setCooldown(sec)
   })
@@ -77,13 +90,11 @@ const Answers = ({
           {question}
         </h2>
 
-        {Boolean(image) && (
-          <img
-            alt={question}
-            src={image}
-            className="m-4 h-full max-h-[400px] min-h-[200px] w-auto rounded-md"
-          />
-        )}
+        <QuestionMedia
+          media={media || (image ? { type: "image", url: image } : undefined)}
+          alt={question}
+          onPlayChange={(playing) => setIsMediaPlaying(playing)}
+        />
       </div>
 
       <div>

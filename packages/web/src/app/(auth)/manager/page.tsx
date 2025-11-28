@@ -3,6 +3,7 @@
 import { QuizzWithId } from "@rahoot/common/types/game"
 import { STATUS } from "@rahoot/common/types/game/status"
 import ManagerPassword from "@rahoot/web/components/game/create/ManagerPassword"
+import QuizEditor from "@rahoot/web/components/game/create/QuizEditor"
 import SelectQuizz from "@rahoot/web/components/game/create/SelectQuizz"
 import { useEvent, useSocket } from "@rahoot/web/contexts/socketProvider"
 import { useManagerStore } from "@rahoot/web/stores/manager"
@@ -16,6 +17,7 @@ const Manager = () => {
 
   const [isAuth, setIsAuth] = useState(false)
   const [quizzList, setQuizzList] = useState<QuizzWithId[]>([])
+  const [showEditor, setShowEditor] = useState(false)
 
   useEvent("manager:quizzList", (quizzList) => {
     setIsAuth(true)
@@ -39,7 +41,23 @@ const Manager = () => {
     return <ManagerPassword onSubmit={handleAuth} />
   }
 
-  return <SelectQuizz quizzList={quizzList} onSelect={handleCreate} />
+  if (showEditor) {
+    return (
+      <QuizEditor
+        quizzList={quizzList}
+        onBack={() => setShowEditor(false)}
+        onListUpdate={setQuizzList}
+      />
+    )
+  }
+
+  return (
+    <SelectQuizz
+      quizzList={quizzList}
+      onSelect={handleCreate}
+      onManage={() => setShowEditor(true)}
+    />
+  )
 }
 
 export default Manager

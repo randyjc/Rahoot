@@ -1,6 +1,7 @@
 "use client"
 
 import { CommonStatusDataMap } from "@rahoot/common/types/game/status"
+import QuestionMedia from "@rahoot/web/components/game/QuestionMedia"
 import { SFX_SHOW_SOUND } from "@rahoot/web/utils/constants"
 import { useEffect } from "react"
 import useSound from "use-sound"
@@ -9,7 +10,7 @@ type Props = {
   data: CommonStatusDataMap["SHOW_QUESTION"]
 }
 
-const Question = ({ data: { question, image, cooldown } }: Props) => {
+const Question = ({ data: { question, image, media, cooldown } }: Props) => {
   const [sfxShow] = useSound(SFX_SHOW_SOUND, { volume: 0.5 })
 
   useEffect(() => {
@@ -23,13 +24,10 @@ const Question = ({ data: { question, image, cooldown } }: Props) => {
           {question}
         </h2>
 
-        {Boolean(image) && (
-          <img
-            alt={question}
-            src={image}
-            className="m-4 h-full max-h-[400px] min-h-[200px] w-auto rounded-md"
-          />
-        )}
+        <QuestionMedia
+          media={media || (image ? { type: "image", url: image } : undefined)}
+          alt={question}
+        />
       </div>
       <div
         className="bg-primary mb-20 h-4 self-start justify-self-end rounded-full"

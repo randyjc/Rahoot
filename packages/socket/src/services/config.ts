@@ -2,6 +2,13 @@ import { QuizzWithId } from "@rahoot/common/types/game"
 import fs from "fs"
 import { resolve } from "path"
 
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 50)
+
 const inContainerPath = process.env.CONFIG_PATH
 
 const getPath = (path: string = "") =>
@@ -10,12 +17,22 @@ const getPath = (path: string = "") =>
     : resolve(process.cwd(), "../../config", path)
 
 class Config {
-  static init() {
+  static ensureBaseFolders() {
     const isConfigFolderExists = fs.existsSync(getPath())
 
     if (!isConfigFolderExists) {
       fs.mkdirSync(getPath())
     }
+
+    const isQuizzExists = fs.existsSync(getPath("quizz"))
+
+    if (!isQuizzExists) {
+      fs.mkdirSync(getPath("quizz"))
+    }
+  }
+
+  static init() {
+    this.ensureBaseFolders()
 
     const isGameConfigExists = fs.existsSync(getPath("game.json"))
 
@@ -33,10 +50,10 @@ class Config {
       )
     }
 
-    const isQuizzExists = fs.existsSync(getPath("quizz"))
+    const isQuizzExists = fs.readdirSync(getPath("quizz")).length > 0
 
     if (!isQuizzExists) {
-      fs.mkdirSync(getPath("quizz"))
+      fs.mkdirSync(getPath("quizz"), { recursive: true })
 
       fs.writeFileSync(
         getPath("quizz/example.json"),
@@ -67,6 +84,49 @@ class Config {
                 cooldown: 5,
                 time: 20,
               },
+              {
+                question: "Which soundtrack is this?",
+                answers: [
+                  "Nature sounds",
+                  "Piano solo",
+                  "Electronic beat",
+                  "Chill guitar",
+                ],
+                media: {
+                  type: "audio",
+                  url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/4/4c/Beethoven_Moonlight_1st_movement.ogg/Beethoven_Moonlight_1st_movement.ogg.mp3",
+                },
+                solution: 1,
+                cooldown: 5,
+                time: 25,
+              },
+              {
+                question: "Which landmark appears in this clip?",
+                answers: [
+                  "Eiffel Tower",
+                  "Sydney Opera House",
+                  "Statue of Liberty",
+                  "Golden Gate Bridge",
+                ],
+                media: {
+                  type: "youtube",
+                  url: "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+                },
+                solution: 3,
+                cooldown: 5,
+                time: 60,
+              },
+              {
+                question: "What kind of animal is featured here?",
+                answers: ["Dolphin", "Panda", "Horse", "Penguin"],
+                media: {
+                  type: "youtube",
+                  url: "https://www.youtube.com/watch?v=2k1qW3D0q6c",
+                },
+                solution: 2,
+                cooldown: 5,
+                time: 40,
+              },
             ],
           },
           null,
@@ -95,35 +155,66 @@ class Config {
   }
 
   static quizz() {
-    const isExists = fs.existsSync(getPath("quizz"))
+    this.ensureBaseFolders()
 
-    if (!isExists) {
-      return []
+    const files = fs
+      .readdirSync(getPath("quizz"))
+      .filter((file) => file.endsWith(".json"))
+
+    const quizz: QuizzWithId[] = files.map((file) => {
+      const data = fs.readFileSync(getPath(`quizz/${file}`), "utf-8")
+      const config = JSON.parse(data)
+
+      const id = file.replace(".json", "")
+
+      return {
+        id,
+        ...config,
+      }
+    })
+
+    return quizz || []
+  }
+
+  static getQuizz(id: string) {
+    this.ensureBaseFolders()
+
+    const filePath = getPath(`quizz/${id}.json`)
+
+    if (!fs.existsSync(filePath)) {
+      return null
     }
 
-    try {
-      const files = fs
-        .readdirSync(getPath("quizz"))
-        .filter((file) => file.endsWith(".json"))
+    const data = fs.readFileSync(filePath, "utf-8")
 
-      const quizz: QuizzWithId[] = files.map((file) => {
-        const data = fs.readFileSync(getPath(`quizz/${file}`), "utf-8")
-        const config = JSON.parse(data)
+    return { id, ...JSON.parse(data) } as QuizzWithId
+  }
 
-        const id = file.replace(".json", "")
+  static saveQuizz(
+    id: string | null,
+    quizz: QuizzWithId | Omit<QuizzWithId, "id">
+  ) {
+    this.ensureBaseFolders()
 
-        return {
-          id,
-          ...config,
-        }
-      })
+    const slug = id
+      ? slugify(id)
+      : slugify((quizz as any).subject || "quizz")
+    const finalId = slug.length > 0 ? slug : `quizz-${Date.now()}`
+    const filePath = getPath(`quizz/${finalId}.json`)
 
-      return quizz || []
-    } catch (error) {
-      console.error("Failed to read quizz config:", error)
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify(
+        {
+          subject: quizz.subject,
+          questions: quizz.questions,
+        },
+        null,
+        2
+      )
+    )
 
-      return []
-    }
+    return this.getQuizz(finalId)
   }
 }
 

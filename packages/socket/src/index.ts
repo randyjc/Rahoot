@@ -7,9 +7,18 @@ import Registry from "@rahoot/socket/services/registry"
 import { withGame } from "@rahoot/socket/utils/game"
 import { Server as ServerIO } from "socket.io"
 
+const corsOrigins =
+  process.env.NODE_ENV !== "production"
+    ? "*"
+    : env.WEB_ORIGIN === "*"
+      ? "*"
+      : [env.WEB_ORIGIN, "http://localhost:3000", "http://127.0.0.1:3000"]
+
 const io: Server = new ServerIO({
   cors: {
-    origin: [env.WEB_ORIGIN],
+    origin: corsOrigins,
+    methods: ["GET", "POST"],
+    credentials: false,
   },
 })
 Config.init()
@@ -63,6 +72,42 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.error("Failed to read game config:", error)
       socket.emit("manager:errorMessage", "Failed to read game config")
+    }
+  })
+
+  socket.on("manager:getQuizz", (quizzId) => {
+    const quizz = Config.getQuizz(quizzId)
+
+    if (!quizz) {
+      socket.emit("manager:errorMessage", "Quizz not found")
+
+      return
+    }
+
+    socket.emit("manager:quizzLoaded", quizz)
+  })
+
+  socket.on("manager:saveQuizz", ({ id, quizz }) => {
+    if (!quizz?.subject || !Array.isArray(quizz?.questions)) {
+      socket.emit("manager:errorMessage", "Invalid quizz payload")
+
+      return
+    }
+
+    try {
+      const saved = Config.saveQuizz(id || null, quizz)
+
+      if (!saved) {
+        socket.emit("manager:errorMessage", "Failed to save quizz")
+
+        return
+      }
+
+      socket.emit("manager:quizzSaved", saved)
+      socket.emit("manager:quizzList", Config.quizz())
+    } catch (error) {
+      console.error("Failed to save quizz", error)
+      socket.emit("manager:errorMessage", "Failed to save quizz")
     }
   })
 
