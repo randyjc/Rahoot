@@ -14,7 +14,7 @@ const QuestionMedia = ({ media, alt, onPlayChange }: Props) => {
     return null
   }
 
-  const containerClass = "mx-auto flex w-full max-w-3xl justify-center"
+  const containerClass = "mx-auto flex w-full max-w-5xl justify-center"
 
   switch (media.type) {
     case "image":
@@ -52,7 +52,7 @@ const QuestionMedia = ({ media, alt, onPlayChange }: Props) => {
             crossOrigin="anonymous"
             playsInline
             src={media.url}
-            className="m-4 w-full max-w-3xl rounded-md shadow-lg"
+            className="m-4 w-full max-w-5xl rounded-md shadow-lg"
             preload="metadata"
             onPlay={() => onPlayChange?.(true)}
             onPause={() => onPlayChange?.(false)}

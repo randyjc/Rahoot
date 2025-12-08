@@ -258,7 +258,6 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
     }
 
     setQuestionMedia(qIndex, nextMedia)
-    adjustTimingWithMedia(qIndex, nextMedia)
   }
 
   const clearQuestionMedia = (qIndex: number) => {
@@ -272,6 +271,7 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
 
     try {
       const el = document.createElement(type)
+      el.crossOrigin = "anonymous"
       el.preload = "metadata"
       el.src = url
 
@@ -367,11 +367,6 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
       const type = uploaded.type
 
       setQuestionMedia(qIndex, {
-        type,
-        url: uploaded.url,
-        fileName: uploaded.fileName,
-      })
-      adjustTimingWithMedia(qIndex, {
         type,
         url: uploaded.url,
         fileName: uploaded.fileName,
@@ -647,26 +642,39 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
                       </div>
                     )}
 
-                    <label className="flex flex-col gap-1">
-                      <span className="text-xs font-semibold text-gray-600">
-                        Or paste an external URL
-                      </span>
-                      <Input
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold text-gray-600">
+                      Or paste an external URL
+                    </span>
+                    <Input
                         value={question.media?.url || question.image || ""}
                         onChange={(e) => handleMediaUrlChange(qIndex, e.target.value)}
                         placeholder="https://..."
                         disabled={!question.media?.type}
                       />
-                      <span className="text-xs text-gray-500">
-                        Tip: set answer time longer than the clip duration.
-                      </span>
-                    </label>
+                    <span className="text-xs text-gray-500">
+                      Tip: set answer time longer than the clip duration.
+                    </span>
+                  </label>
 
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        className="bg-gray-700"
-                        onClick={() => clearQuestionMedia(qIndex)}
-                        disabled={!question.media}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      className="bg-gray-800"
+                      onClick={() => adjustTimingWithMedia(qIndex, question.media)}
+                      disabled={!question.media?.url || probing[qIndex]}
+                    >
+                      {probing[qIndex] ? "Probing..." : "Set timing from media"}
+                    </Button>
+                    <span className="text-xs text-gray-500">
+                      Probes audio/video duration and bumps cooldown/answer time if needed.
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      className="bg-gray-700"
+                      onClick={() => clearQuestionMedia(qIndex)}
+                      disabled={!question.media}
                       >
                         Clear from question
                       </Button>
