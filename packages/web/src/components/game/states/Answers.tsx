@@ -28,6 +28,7 @@ const Answers = ({
   const { player } = usePlayerStore()
 
   const [cooldown, setCooldown] = useState(time)
+  const [paused, setPaused] = useState(false)
   const [totalAnswer, setTotalAnswer] = useState(0)
   const [isMediaPlaying, setIsMediaPlaying] = useState(false)
 
