@@ -60,6 +60,7 @@ export interface ServerToClientEvents {
   }) => void
   "manager:newPlayer": (_player: Player) => void
   "manager:removePlayer": (_playerId: string) => void
+  "manager:players": (_players: Player[]) => void
   "manager:errorMessage": (_message: string) => void
   "manager:playerKicked": (_playerId: string) => void
   "manager:quizzLoaded": (_quizz: QuizzWithId) => void
@@ -77,6 +78,7 @@ export interface ClientToServerEvents {
   "manager:abortQuiz": (_message: MessageGameId) => void
   "manager:pauseCooldown": (_message: MessageGameId) => void
   "manager:resumeCooldown": (_message: MessageGameId) => void
+  "manager:endGame": (_message: MessageGameId) => void
   "manager:skipQuestionIntro": (_message: MessageGameId) => void
   "manager:nextQuestion": (_message: MessageGameId) => void
   "manager:deleteQuizz": (_message: { id: string }) => void

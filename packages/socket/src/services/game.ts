@@ -236,6 +236,7 @@ class Game {
     this.players.push(playerData)
 
     this.io.to(this.manager.id).emit("manager:newPlayer", playerData)
+    this.io.to(this.manager.id).emit("manager:players", this.players)
     this.io.to(this.gameId).emit("game:totalPlayers", this.players.length)
 
     socket.emit("game:successJoin", this.gameId)
@@ -260,6 +261,7 @@ class Game {
       .to(player.id)
       .emit("game:reset", "You have been kicked by the manager")
     this.io.to(this.manager.id).emit("manager:playerKicked", player.id)
+    this.io.to(this.manager.id).emit("manager:players", this.players)
 
     this.io.to(this.gameId).emit("game:totalPlayers", this.players.length)
   }
@@ -273,6 +275,7 @@ class Game {
     } else {
       this.reconnectPlayer(socket)
     }
+    this.io.to(this.manager.id).emit("manager:players", this.players)
   }
 
   private reconnectManager(socket: Socket) {
@@ -338,6 +341,7 @@ class Game {
       this.playerStatus.delete(oldSocketId)
       this.playerStatus.set(socket.id, oldStatus)
     }
+    this.io.to(this.manager.id).emit("manager:players", this.players)
 
     socket.emit("player:successReconnect", {
       gameId: this.gameId,
@@ -696,6 +700,16 @@ class Game {
 
     this.tempOldLeaderboard = null
     this.persist()
+  }
+
+  endGame(socket: Socket, registry: typeof Registry.prototype) {
+    if (socket.id !== this.manager.id) {
+      return
+    }
+    this.started = false
+    this.abortCooldown()
+    this.io.to(this.gameId).emit("game:reset", "Game ended by manager")
+    registry.removeGame(this.gameId)
   }
 }
 

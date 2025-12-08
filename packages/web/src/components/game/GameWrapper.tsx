@@ -18,6 +18,8 @@ type Props = PropsWithChildren & {
   onPause?: () => void
   paused?: boolean
   showPause?: boolean
+  onEnd?: () => void
+  players?: { id: string; username: string; connected: boolean }[]
   manager?: boolean
 }
 
@@ -28,6 +30,8 @@ const GameWrapper = ({
   onPause,
   paused,
   showPause,
+  onEnd,
+  players,
   manager,
 }: Props) => {
   const { isConnected } = useSocket()
@@ -97,7 +101,36 @@ const GameWrapper = ({
                 {paused ? "Resume" : "Pause"}
               </Button>
             )}
+
+            {manager && onEnd && (
+              <Button className="self-end bg-red-600 px-4" onClick={onEnd}>
+                End game
+              </Button>
+            )}
           </div>
+
+          {manager && players && players.length > 0 && (
+            <div className="mx-4 mb-2 rounded-md bg-white/90 p-3 text-sm shadow">
+              <div className="mb-1 text-xs font-semibold uppercase text-gray-600">
+                Players ({players.length})
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {players.map((p) => (
+                  <span
+                    key={p.id}
+                    className={clsx(
+                      "rounded border px-2 py-1 font-semibold",
+                      p.connected
+                        ? "border-green-500 text-green-700"
+                        : "border-gray-300 text-gray-500",
+                    )}
+                  >
+                    {p.username || p.id} {p.connected ? "" : "(disc.)"}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {children}
 

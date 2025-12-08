@@ -53,19 +53,16 @@ docker run -d \
   -p 3000:3000 \
   -p 3001:3001 \
   -v ./config:/app/config \
+  -e REDIS_URL=redis://user:pass@redis:6379 \
+  -e MEDIA_MAX_UPLOAD_MB=200 \
   -e WEB_ORIGIN=http://localhost:3000 \
   -e SOCKET_URL=http://localhost:3001 \
   ralex91/rahoot:latest
 ```
 
-**Configuration Volume:**
-The `-v ./config:/app/config` option mounts a local `config` folder to persist your game settings and quizzes. This allows you to:
-
-- Edit your configuration files directly on your host machine
-- Keep your settings when updating the container
-- Easily backup your quizzes and game configuration
-
-The folder will be created automatically on first run with an example quiz to get you started.
+**Configuration & Media Volume:**
+- `-v ./config:/app/config` mounts a local `config` folder to persist settings, quizzes, and uploaded media (`config/quizz`, `config/media`). This keeps your data across redeploys and lets you back it up easily.
+- The folder is auto-created on first run with an example quiz.
 
 The application will be available at:
 
@@ -150,15 +147,28 @@ Quiz Options:
   - `question`: The question text
   - `answers`: Array of possible answers (2-4 options)
   - `image`: Optional URL for question image (legacy; use `media` for new content)
-  - `media`: Optional media attachment `{ "type": "image" | "audio" | "video" | "youtube", "url": "<link>" }`. Examples:
+- `media`: Optional media attachment `{ "type": "image" | "audio" | "video", "url": "<link>" }`. Examples:
     - `{"type":"audio","url":"https://.../clip.mp3"}`
     - `{"type":"video","url":"https://.../clip.mp4"}`
-    - `{"type":"youtube","url":"https://youtu.be/dQw4w9WgXcQ"}`
   - `solution`: Index of correct answer (0-based)
   - `cooldown`: Time in seconds before showing the question
   - `time`: Time in seconds allowed to answer
 
 Tip: You can now create and edit quizzes directly from the Manager UI (login at `/manager` and click “Manage”).
+
+### Manager Features
+- Upload image/audio/video directly in the quiz editor (stored under `config/media`).
+- Manual “Set timing from media” to align cooldown/answer time with clip length.
+- Media library view: see all uploads, where they’re used, and delete unused files.
+- Delete quizzes from the editor.
+- Pause/Resume/Skip question intro and answer timers; End Game button to reset everyone.
+- Player list in manager view showing connected/disconnected players.
+- Click-to-zoom images during questions.
+
+### Resilience & Persistence
+- Redis snapshotting (set `REDIS_URL`, e.g., `redis://:password@redis:6379`) keeps game state so managers/players can reconnect without losing progress.
+- Client auto-reconnects using stored `clientId` and last `gameId`; state resumes after refresh/tab close if the game still exists.
+- `MEDIA_MAX_UPLOAD_MB` env controls upload size limit (default 50MB; set higher for video).
 
 ## 🎮 How to Play
 

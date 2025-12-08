@@ -234,6 +234,10 @@ io.on("connection", (socket) => {
     withGame(gameId, socket, (game) => game.resumeCooldown(socket))
   )
 
+  socket.on("manager:endGame", ({ gameId }) =>
+    withGame(gameId, socket, (game) => game.endGame(socket, registry))
+  )
+
   socket.on("manager:nextQuestion", ({ gameId }) =>
     withGame(gameId, socket, (game) => game.nextRound(socket))
   )
@@ -281,6 +285,7 @@ io.on("connection", (socket) => {
       game.players = game.players.filter((p) => p.id !== socket.id)
 
       io.to(game.manager.id).emit("manager:removePlayer", player.id)
+      io.to(game.manager.id).emit("manager:players", game.players)
       io.to(game.gameId).emit("game:totalPlayers", game.players.length)
 
       console.log(`Removed player ${player.username} from game ${game.gameId}`)
@@ -290,6 +295,7 @@ io.on("connection", (socket) => {
 
     player.connected = false
     io.to(game.gameId).emit("game:totalPlayers", game.players.length)
+    io.to(game.manager.id).emit("manager:players", game.players)
   })
 })
 

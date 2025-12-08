@@ -26,6 +26,7 @@ const ManagerGame = () => {
     useManagerStore()
   const { setQuestionStates } = useQuestionStore()
   const [cooldownPaused, setCooldownPaused] = useState(false)
+  const { players } = useManagerStore()
 
   useEvent("game:status", ({ name, data }) => {
     if (name in GAME_STATE_COMPONENTS_MANAGER) {
@@ -54,6 +55,18 @@ const ManagerGame = () => {
     reset()
     setQuestionStates(null)
     toast.error(message)
+  })
+
+  useEvent("manager:newPlayer", (player) => {
+    setPlayers((prev) => [...prev.filter((p) => p.id !== player.id), player])
+  })
+
+  useEvent("manager:removePlayer", (playerId) => {
+    setPlayers((prev) => prev.filter((p) => p.id !== playerId))
+  })
+
+  useEvent("manager:players", (players) => {
+    setPlayers(players)
   })
 
   useEvent("game:cooldownPause", (isPaused) => {
@@ -100,6 +113,11 @@ const ManagerGame = () => {
     } else {
       socket?.emit("manager:pauseCooldown", { gameId })
     }
+  }
+
+  const handleEndGame = () => {
+    if (!gameId) return
+    socket?.emit("manager:endGame", { gameId })
   }
 
   let component = null
@@ -155,6 +173,8 @@ const ManagerGame = () => {
       showPause={
         status?.name === STATUS.SHOW_QUESTION || status?.name === STATUS.SELECT_ANSWER
       }
+      onEnd={handleEndGame}
+      players={players}
       manager
     >
       {component}
