@@ -11,6 +11,10 @@ type YoutubeAPI = {
   PlayerState: Record<string, number>
 }
 
+type YoutubeStateChangeEvent = {
+  data: number
+}
+
 let youtubeApiPromise: Promise<YoutubeAPI | null> | null = null
 
 const loadYoutubeApi = () => {
@@ -131,7 +135,7 @@ const QuestionMedia = ({ media, alt, onPlayChange }: Props) => {
           onReady: () => {
             setYoutubeReady(true)
           },
-          onStateChange: (event) => {
+          onStateChange: (event: YoutubeStateChangeEvent) => {
             const { data } = event
             const isPlaying =
               data === YT.PlayerState.PLAYING ||
