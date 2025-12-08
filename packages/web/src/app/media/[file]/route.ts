@@ -26,13 +26,49 @@ export async function GET(
   }
 
   try {
-    const buffer = await fsp.readFile(filePath)
+    const stat = await fsp.stat(filePath)
+    const fileSize = stat.size
     const mime = mimeForStoredFile(safeName)
+    const range = _request.headers.get("range")
+
+    // Basic range support improves Safari/iOS playback
+    if (range) {
+      const bytesPrefix = "bytes="
+      if (!range.startsWith(bytesPrefix)) {
+        return new NextResponse(null, { status: 416 })
+      }
+
+      const [rawStart, rawEnd] = range.replace(bytesPrefix, "").split("-")
+      const start = Number(rawStart)
+      const end = rawEnd ? Number(rawEnd) : fileSize - 1
+
+      if (Number.isNaN(start) || Number.isNaN(end) || start > end) {
+        return new NextResponse(null, { status: 416 })
+      }
+
+      const chunkSize = end - start + 1
+      const stream = fs.createReadStream(filePath, { start, end })
+
+      return new NextResponse(stream as any, {
+        status: 206,
+        headers: {
+          "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+          "Accept-Ranges": "bytes",
+          "Content-Length": chunkSize.toString(),
+          "Content-Type": mime,
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      })
+    }
+
+    const buffer = await fsp.readFile(filePath)
 
     return new NextResponse(buffer, {
       status: 200,
       headers: {
         "Content-Type": mime,
+        "Content-Length": fileSize.toString(),
+        "Accept-Ranges": "bytes",
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     })
