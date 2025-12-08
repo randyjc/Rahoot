@@ -164,6 +164,7 @@ Tip: You can now create and edit quizzes directly from the Manager UI (login at 
 - Pause/Resume/Skip question intro and answer timers; End Game button to reset everyone.
 - Player list in manager view showing connected/disconnected players.
 - Click-to-zoom images during questions.
+- Player reconnect resilience: Redis snapshotting keeps game state; clients auto-rejoin using stored `clientId`/last game; username/points are hydrated locally after refresh without a manual reload.
 
 ### Resilience & Persistence
 - Redis snapshotting (set `REDIS_URL`, e.g., `redis://:password@redis:6379`) keeps game state so managers/players can reconnect without losing progress.
