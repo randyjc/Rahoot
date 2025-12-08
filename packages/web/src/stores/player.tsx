@@ -35,11 +35,24 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>((set) => ({
 
   setGameId: (gameId) => set({ gameId }),
 
-  setPlayer: (player: PlayerState) => set({ player }),
+  setPlayer: (player: PlayerState) => {
+    try {
+      if (player.username) localStorage.setItem("last_username", player.username)
+      if (typeof player.points === "number") {
+        localStorage.setItem("last_points", String(player.points))
+      }
+    } catch {}
+    set({ player })
+  },
   login: (username) =>
-    set((state) => ({
-      player: { ...state.player, username },
-    })),
+    set((state) => {
+      try {
+        localStorage.setItem("last_username", username)
+      } catch {}
+      return {
+        player: { ...state.player, username },
+      }
+    }),
 
   join: (gameId) => {
     set((state) => ({
@@ -48,12 +61,22 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>((set) => ({
     }))
   },
 
-  updatePoints: (points) =>
+  updatePoints: (points) => {
+    try {
+      localStorage.setItem("last_points", String(points))
+    } catch {}
     set((state) => ({
       player: { ...state.player, points },
-    })),
+    }))
+  },
 
   setStatus: (name, data) => set({ status: createStatus(name, data) }),
 
-  reset: () => set(initialState),
+  reset: () => {
+    try {
+      localStorage.removeItem("last_username")
+      localStorage.removeItem("last_points")
+    } catch {}
+    set(initialState)
+  },
 }))

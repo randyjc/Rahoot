@@ -13,13 +13,15 @@ import { usePlayerStore } from "@rahoot/web/stores/player"
 import { useQuestionStore } from "@rahoot/web/stores/question"
 import { GAME_STATE_COMPONENTS } from "@rahoot/web/utils/constants"
 import { useParams, useRouter } from "next/navigation"
+import { useEffect } from "react"
 import toast from "react-hot-toast"
 
 const Game = () => {
   const router = useRouter()
   const { socket } = useSocket()
   const { gameId: gameIdParam }: { gameId?: string } = useParams()
-  const { status, setPlayer, setGameId, setStatus, reset } = usePlayerStore()
+  const { status, player, setPlayer, setGameId, setStatus, reset } =
+    usePlayerStore()
   const { setQuestionStates } = useQuestionStore()
 
   useEvent("connect", () => {
@@ -57,9 +59,28 @@ const Game = () => {
     try {
       localStorage.removeItem("last_game_id")
       localStorage.removeItem("last_username")
+      localStorage.removeItem("last_points")
     } catch {}
     toast.error(message)
   })
+
+  // Hydrate username/points for footer immediately after refresh
+  useEffect(() => {
+    if (player?.username) return
+    try {
+      const name = localStorage.getItem("last_username")
+      const ptsRaw = localStorage.getItem("last_points")
+      const pts = ptsRaw ? Number(ptsRaw) : undefined
+      if (name || typeof pts === "number") {
+        setPlayer({
+          username: name || undefined,
+          points: pts,
+        })
+      }
+    } catch {
+      // ignore
+    }
+  }, [player?.username, setPlayer])
 
   if (!gameIdParam) {
     return null
