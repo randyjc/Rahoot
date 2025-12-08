@@ -28,6 +28,11 @@ const Game = () => {
     }
   })
 
+  useEvent("disconnect", () => {
+    // Force reconnection attempt and re-emit player reconnect once socket is back
+    socket?.connect()
+  })
+
   useEvent(
     "player:successReconnect",
     ({ gameId, status, player, currentQuestion }) => {
