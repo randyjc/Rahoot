@@ -26,10 +26,9 @@ export type Quizz = {
 }
 
 export type QuestionMedia =
-  | { type: "image"; url: string }
-  | { type: "audio"; url: string }
-  | { type: "video"; url: string }
-  | { type: "youtube"; url: string }
+  | { type: "image"; url: string; fileName?: string }
+  | { type: "audio"; url: string; fileName?: string }
+  | { type: "video"; url: string; fileName?: string }
 
 export type QuizzWithId = Quizz & { id: string }
 

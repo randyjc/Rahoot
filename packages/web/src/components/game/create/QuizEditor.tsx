@@ -5,7 +5,7 @@ import Button from "@rahoot/web/components/Button"
 import Input from "@rahoot/web/components/Input"
 import { useEvent, useSocket } from "@rahoot/web/contexts/socketProvider"
 import clsx from "clsx"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import toast from "react-hot-toast"
 
 type Props = {
@@ -16,6 +16,20 @@ type Props = {
 
 type EditableQuestion = QuizzWithId["questions"][number]
 
+type MediaLibraryItem = {
+  fileName: string
+  url: string
+  size: number
+  mime: string
+  type: QuestionMedia["type"]
+  usedBy: {
+    quizzId: string
+    subject: string
+    questionIndex: number
+    question: string
+  }[]
+}
+
 const blankQuestion = (): EditableQuestion => ({
   question: "",
   answers: ["", ""],
@@ -24,12 +38,22 @@ const blankQuestion = (): EditableQuestion => ({
   time: 20,
 })
 
-const mediaTypes: QuestionMedia["type"][] = [
-  "image",
-  "audio",
-  "video",
-  "youtube",
-]
+const mediaTypes: QuestionMedia["type"][] = ["image", "audio", "video"]
+
+const acceptByType: Record<QuestionMedia["type"], string> = {
+  image: "image/*",
+  audio: "audio/*",
+  video: "video/*",
+}
+
+const formatBytes = (bytes: number) => {
+  if (!bytes) return "0 B"
+  const units = ["B", "KB", "MB", "GB"]
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+  const value = bytes / 1024 ** i
+
+  return `${value.toFixed(value >= 10 || value % 1 === 0 ? 0 : 1)} ${units[i]}`
+}
 
 const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
   const { socket } = useSocket()
@@ -37,6 +61,10 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
   const [draft, setDraft] = useState<QuizzWithId | null>(null)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [mediaLibrary, setMediaLibrary] = useState<MediaLibraryItem[]>([])
+  const [uploading, setUploading] = useState<Record<number, boolean>>({})
+  const [deleting, setDeleting] = useState<Record<number, boolean>>({})
+  const [refreshingLibrary, setRefreshingLibrary] = useState(false)
 
   useEvent("manager:quizzLoaded", (quizz) => {
     setDraft(quizz)
@@ -48,6 +76,7 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
     setDraft(quizz)
     setSelectedId(quizz.id)
     setSaving(false)
+    refreshMediaLibrary()
   })
 
   useEvent("manager:quizzList", (list) => {
@@ -59,6 +88,31 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
     setSaving(false)
     setLoading(false)
   })
+
+  const refreshMediaLibrary = useCallback(async () => {
+    setRefreshingLibrary(true)
+    try {
+      const res = await fetch("/api/media", { cache: "no-store" })
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to load media library")
+      }
+
+      setMediaLibrary(data.media || [])
+    } catch (error) {
+      console.error("Failed to fetch media library", error)
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load media library",
+      )
+    } finally {
+      setRefreshingLibrary(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshMediaLibrary()
+  }, [refreshMediaLibrary])
 
   const handleLoad = (id: string) => {
     setSelectedId(id)
@@ -138,12 +192,151 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
     setDraft({ ...draft, questions: nextQuestions })
   }
 
+  const setQuestionMedia = (qIndex: number, media?: QuestionMedia) => {
+    if (!draft) return
+    updateQuestion(qIndex, {
+      media,
+      image: media?.type === "image" ? media.url : undefined,
+    })
+  }
+
+  const getMediaFileName = (media?: QuestionMedia | null) => {
+    if (!media) return null
+    if (media.fileName) return media.fileName
+    if (media.url?.startsWith("/media/")) {
+      return decodeURIComponent(media.url.split("/").pop() || "")
+    }
+    return null
+  }
+
+  const getLibraryEntry = (media?: QuestionMedia | null) => {
+    const fileName = getMediaFileName(media)
+    if (!fileName) return null
+
+    return mediaLibrary.find((item) => item.fileName === fileName) || null
+  }
+
   const handleMediaType = (qIndex: number, type: QuestionMedia["type"] | "") => {
     if (!draft) return
     const question = draft.questions[qIndex]
+
+    if (type === "") {
+      setQuestionMedia(qIndex, undefined)
+      return
+    }
+
     const nextMedia =
-      type === "" ? undefined : { type, url: question.media?.url || "" }
-    updateQuestion(qIndex, { media: nextMedia })
+      question.media?.type === type
+        ? { ...question.media, type }
+        : { type, url: "" }
+
+    setQuestionMedia(qIndex, nextMedia)
+  }
+
+  const handleMediaUrlChange = (qIndex: number, url: string) => {
+    if (!draft) return
+    const question = draft.questions[qIndex]
+
+    if (!question.media?.type) {
+      toast.error("Select a media type before setting a URL")
+      return
+    }
+
+    if (!url) {
+      setQuestionMedia(qIndex, undefined)
+      return
+    }
+
+    const nextMedia: QuestionMedia = {
+      type: question.media.type,
+      url,
+    }
+
+    if (question.media.fileName && url.includes(question.media.fileName)) {
+      nextMedia.fileName = question.media.fileName
+    }
+
+    setQuestionMedia(qIndex, nextMedia)
+  }
+
+  const clearQuestionMedia = (qIndex: number) => {
+    setQuestionMedia(qIndex, undefined)
+  }
+
+  const handleMediaUpload = async (qIndex: number, file: File) => {
+    if (!draft) return
+    const question = draft.questions[qIndex]
+
+    if (!question.media?.type) {
+      toast.error("Select a media type before uploading")
+      return
+    }
+
+    setUploading((prev) => ({ ...prev, [qIndex]: true }))
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const res = await fetch("/api/media", {
+        method: "POST",
+        body: formData,
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to upload media")
+      }
+
+      const uploaded = data.media as MediaLibraryItem
+      const type = uploaded.type
+
+      setQuestionMedia(qIndex, {
+        type,
+        url: uploaded.url,
+        fileName: uploaded.fileName,
+      })
+      toast.success("Media uploaded")
+      refreshMediaLibrary()
+    } catch (error) {
+      console.error("Upload failed", error)
+      toast.error(error instanceof Error ? error.message : "Upload failed")
+    } finally {
+      setUploading((prev) => ({ ...prev, [qIndex]: false }))
+    }
+  }
+
+  const handleDeleteMediaFile = async (qIndex: number) => {
+    if (!draft) return
+    const question = draft.questions[qIndex]
+    const fileName = getMediaFileName(question.media)
+
+    if (!fileName) {
+      toast.error("No stored file to delete")
+      return
+    }
+
+    setDeleting((prev) => ({ ...prev, [qIndex]: true }))
+
+    try {
+      const res = await fetch(`/api/media/${encodeURIComponent(fileName)}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete file")
+      }
+
+      toast.success("File deleted")
+      clearQuestionMedia(qIndex)
+      refreshMediaLibrary()
+    } catch (error) {
+      console.error("Failed to delete file", error)
+      toast.error(error instanceof Error ? error.message : "Failed to delete file")
+    } finally {
+      setDeleting((prev) => ({ ...prev, [qIndex]: false }))
+    }
   }
 
   const handleSave = () => {
@@ -225,11 +418,17 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
             </label>
           </div>
 
-          {draft.questions.map((question, qIndex) => (
-            <div
-              key={qIndex}
-              className="rounded-md border border-gray-200 p-4 shadow-sm"
-            >
+          {draft.questions.map((question, qIndex) => {
+            const libraryEntry = getLibraryEntry(question.media)
+            const mediaFileName = getMediaFileName(question.media)
+            const isUploading = uploading[qIndex]
+            const isDeleting = deleting[qIndex]
+
+            return (
+              <div
+                key={qIndex}
+                className="rounded-md border border-gray-200 p-4 shadow-sm"
+              >
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-lg font-semibold text-gray-800">
                   Question {qIndex + 1}
@@ -306,29 +505,94 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
                   </select>
                 </label>
 
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-semibold text-gray-600">
-                    Media URL
-                  </span>
-                  <Input
-                    value={question.media?.url || question.image || ""}
-                    onChange={(e) =>
-                      updateQuestion(qIndex, {
-                        media: question.media
-                          ? { ...question.media, url: e.target.value }
-                          : undefined,
-                        image:
-                          !question.media || question.media.type === "image"
-                            ? e.target.value
-                            : question.image,
-                      })
+                <div className="flex flex-col gap-2 rounded-md border border-gray-200 p-3">
+                  <div className="flex items-center justify-between text-sm font-semibold text-gray-600">
+                    <span>Media upload</span>
+                    <span className="text-xs text-gray-500">
+                      {isUploading
+                        ? "Uploading..."
+                        : refreshingLibrary
+                          ? "Refreshing..."
+                          : mediaFileName
+                            ? "Stored"
+                            : "Not saved"}
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    accept={
+                      question.media?.type ? acceptByType[question.media.type] : undefined
                     }
-                    placeholder="https://..."
+                    disabled={!question.media?.type || isUploading}
+                    className="rounded-sm border border-dashed border-gray-300 p-2 text-sm"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        handleMediaUpload(qIndex, file)
+                        e.target.value = ""
+                      }
+                    }}
                   />
-                  <span className="text-xs text-gray-500">
-                    Tip: set answer time longer than the clip duration.
-                  </span>
-                </label>
+                  <p className="text-xs text-gray-500">
+                    Files are stored locally and served from /media. Pick a type first.
+                  </p>
+
+                  {question.media && (
+                    <div className="rounded-md border border-gray-200 bg-gray-50 p-2">
+                      <div className="flex items-center justify-between text-sm font-semibold text-gray-700">
+                        <span>
+                          {mediaFileName || question.media.url || "No file yet"}
+                        </span>
+                        {libraryEntry && (
+                          <span className="text-xs text-gray-500">
+                            {formatBytes(libraryEntry.size)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {libraryEntry
+                          ? `Used in ${libraryEntry.usedBy.length} question${
+                              libraryEntry.usedBy.length === 1 ? "" : "s"
+                            }`
+                          : question.media.url
+                            ? "External media URL"
+                            : "Upload a file or paste a URL"}
+                      </div>
+                    </div>
+                  )}
+
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold text-gray-600">
+                      Or paste an external URL
+                    </span>
+                    <Input
+                      value={question.media?.url || question.image || ""}
+                      onChange={(e) => handleMediaUrlChange(qIndex, e.target.value)}
+                      placeholder="https://..."
+                      disabled={!question.media?.type}
+                    />
+                    <span className="text-xs text-gray-500">
+                      Tip: set answer time longer than the clip duration.
+                    </span>
+                  </label>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      className="bg-gray-700"
+                      onClick={() => clearQuestionMedia(qIndex)}
+                      disabled={!question.media}
+                    >
+                      Clear from question
+                    </Button>
+                    <Button
+                      className="bg-red-500"
+                      onClick={() => handleDeleteMediaFile(qIndex)}
+                      disabled={!mediaFileName || isDeleting}
+                    >
+                      {isDeleting ? "Deleting..." : "Delete file"}
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-4 space-y-3">

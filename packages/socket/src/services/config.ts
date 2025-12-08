@@ -16,6 +16,8 @@ const getPath = (path: string = "") =>
     ? resolve(inContainerPath, path)
     : resolve(process.cwd(), "../../config", path)
 
+export const getConfigPath = (path: string = "") => getPath(path)
+
 class Config {
   static ensureBaseFolders() {
     const isConfigFolderExists = fs.existsSync(getPath())
@@ -28,6 +30,12 @@ class Config {
 
     if (!isQuizzExists) {
       fs.mkdirSync(getPath("quizz"))
+    }
+
+    const isMediaExists = fs.existsSync(getPath("media"))
+
+    if (!isMediaExists) {
+      fs.mkdirSync(getPath("media"))
     }
   }
 
@@ -109,19 +117,8 @@ class Config {
                   "Golden Gate Bridge",
                 ],
                 media: {
-                  type: "youtube",
-                  url: "https://www.youtube.com/watch?v=jNQXAC9IVRw",
-                },
-                solution: 3,
-                cooldown: 5,
-                time: 60,
-              },
-              {
-                question: "What kind of animal is featured here?",
-                answers: ["Dolphin", "Panda", "Horse", "Penguin"],
-                media: {
-                  type: "youtube",
-                  url: "https://www.youtube.com/watch?v=2k1qW3D0q6c",
+                  type: "video",
+                  url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
                 },
                 solution: 2,
                 cooldown: 5,
@@ -215,6 +212,12 @@ class Config {
     )
 
     return this.getQuizz(finalId)
+  }
+
+  static getMediaPath(fileName: string = "") {
+    this.ensureBaseFolders()
+
+    return getPath(fileName ? `media/${fileName}` : "media")
   }
 }
 
