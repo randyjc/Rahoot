@@ -2,6 +2,7 @@
 
 import { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import QuestionMedia from "@rahoot/web/components/game/QuestionMedia"
+import { useEvent } from "@rahoot/web/contexts/socketProvider"
 import { SFX_SHOW_SOUND } from "@rahoot/web/utils/constants"
 import { useEffect, useState } from "react"
 import useSound from "use-sound"
