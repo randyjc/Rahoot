@@ -4,14 +4,13 @@ import { NextRequest, NextResponse } from "next/server"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-type RouteContext = {
-  params?: Promise<Record<string, string | string[] | undefined>>
-}
-
-export async function DELETE(_request: NextRequest, context: RouteContext) {
+export async function DELETE(
+  _request: NextRequest,
+  context: { params: Promise<{ file: string }> },
+) {
   try {
-    const params = context.params ? await context.params : undefined
-    const fileParam = Array.isArray(params?.file) ? params?.file[0] : params?.file
+    const params = await context.params
+    const fileParam = params.file
 
     if (!fileParam) {
       return NextResponse.json({ error: "Missing file parameter" }, { status: 400 })
