@@ -33,6 +33,7 @@ const QuestionMedia = ({ media, alt, onPlayChange }: Props) => {
         <div className={clsx(containerClass, "px-4")}>
           <audio
             controls
+            crossOrigin="anonymous"
             src={media.url}
             className="mt-4 w-full rounded-md bg-black/40 p-2 shadow-lg"
             preload="none"
@@ -48,6 +49,8 @@ const QuestionMedia = ({ media, alt, onPlayChange }: Props) => {
         <div className={containerClass}>
           <video
             controls
+            crossOrigin="anonymous"
+            playsInline
             src={media.url}
             className="m-4 w-full max-w-3xl rounded-md shadow-lg"
             preload="metadata"

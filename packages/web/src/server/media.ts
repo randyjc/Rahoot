@@ -34,19 +34,30 @@ const ensureMediaFolder = () => {
 const inferMimeFromName = (fileName: string) => {
   const ext = path.extname(fileName).toLowerCase()
 
-  if ([".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"].includes(ext)) {
-    return `image/${ext.replace(".", "") || "jpeg"}`
+  const map: Record<string, string> = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".bmp": "image/bmp",
+    ".svg": "image/svg+xml",
+    ".mp3": "audio/mpeg",
+    ".m4a": "audio/mp4",
+    ".aac": "audio/aac",
+    ".wav": "audio/wav",
+    ".ogg": "audio/ogg",
+    ".oga": "audio/ogg",
+    ".flac": "audio/flac",
+    ".mp4": "video/mp4",
+    ".m4v": "video/mp4",
+    ".mov": "video/quicktime",
+    ".webm": "video/webm",
+    ".ogv": "video/ogg",
+    ".mkv": "video/x-matroska",
   }
 
-  if ([".mp3", ".wav", ".ogg", ".aac", ".m4a", ".flac"].includes(ext)) {
-    return `audio/${ext.replace(".", "") || "mpeg"}`
-  }
-
-  if ([".mp4", ".webm", ".mov", ".ogv", ".mkv"].includes(ext)) {
-    return `video/${ext.replace(".", "") || "mp4"}`
-  }
-
-  return "application/octet-stream"
+  return map[ext] || "application/octet-stream"
 }
 
 const inferMediaType = (mime: string): QuestionMedia["type"] | null => {
