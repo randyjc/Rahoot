@@ -1,5 +1,5 @@
 import { Server as ServerIO, Socket as SocketIO } from "socket.io"
-import { GameUpdateQuestion, Player, QuizzWithId } from "."
+import { GameUpdateQuestion, Player, Quizz, QuizzWithId } from "."
 import { Status, StatusDataMap } from "./status"
 
 export type Server = ServerIO<ClientToServerEvents, ServerToClientEvents>
@@ -61,6 +61,8 @@ export interface ServerToClientEvents {
   "manager:removePlayer": (_playerId: string) => void
   "manager:errorMessage": (_message: string) => void
   "manager:playerKicked": (_playerId: string) => void
+  "manager:quizzLoaded": (_quizz: QuizzWithId) => void
+  "manager:quizzSaved": (_quizz: QuizzWithId) => void
 }
 
 export interface ClientToServerEvents {
@@ -73,6 +75,8 @@ export interface ClientToServerEvents {
   "manager:abortQuiz": (_message: MessageGameId) => void
   "manager:nextQuestion": (_message: MessageGameId) => void
   "manager:showLeaderboard": (_message: MessageGameId) => void
+  "manager:getQuizz": (_quizzId: string) => void
+  "manager:saveQuizz": (_payload: { id: string | null; quizz: Quizz }) => void
 
   // Player actions
   "player:join": (_inviteCode: string) => void
