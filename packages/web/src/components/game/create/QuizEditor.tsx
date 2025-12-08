@@ -429,224 +429,229 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
                 key={qIndex}
                 className="rounded-md border border-gray-200 p-4 shadow-sm"
               >
-              <div className="mb-3 flex items-center justify-between">
-                <div className="text-lg font-semibold text-gray-800">
-                  Question {qIndex + 1}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    className="bg-red-500"
-                    onClick={() => removeQuestion(qIndex)}
-                    disabled={draft.questions.length <= 1}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-semibold text-gray-600">Prompt</span>
-                  <Input
-                    value={question.question}
-                    onChange={(e) =>
-                      updateQuestion(qIndex, { question: e.target.value })
-                    }
-                    placeholder="Enter the question"
-                  />
-                </label>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-sm font-semibold text-gray-600">Cooldown (s)</span>
-                    <Input
-                      type="number"
-                      value={question.cooldown}
-                      onChange={(e) =>
-                        updateQuestion(qIndex, {
-                          cooldown: Number(e.target.value || 0),
-                        })
-                      }
-                      min={0}
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-sm font-semibold text-gray-600">Answer time (s)</span>
-                    <Input
-                      type="number"
-                      value={question.time}
-                      onChange={(e) =>
-                        updateQuestion(qIndex, { time: Number(e.target.value || 0) })
-                      }
-                      min={5}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-semibold text-gray-600">
-                    Media type
-                  </span>
-                  <select
-                    className="rounded-sm border border-gray-300 p-2 font-semibold"
-                    value={question.media?.type || ""}
-                    onChange={(e) =>
-                      handleMediaType(qIndex, e.target.value as QuestionMedia["type"] | "")
-                    }
-                  >
-                    <option value="">None</option>
-                    {mediaTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <div className="flex flex-col gap-2 rounded-md border border-gray-200 p-3">
-                  <div className="flex items-center justify-between text-sm font-semibold text-gray-600">
-                    <span>Media upload</span>
-                    <span className="text-xs text-gray-500">
-                      {isUploading
-                        ? "Uploading..."
-                        : refreshingLibrary
-                          ? "Refreshing..."
-                          : mediaFileName
-                            ? "Stored"
-                            : "Not saved"}
-                    </span>
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="text-lg font-semibold text-gray-800">
+                    Question {qIndex + 1}
                   </div>
-                  <input
-                    type="file"
-                    accept={
-                      question.media?.type ? acceptByType[question.media.type] : undefined
-                    }
-                    disabled={!question.media?.type || isUploading}
-                    className="rounded-sm border border-dashed border-gray-300 p-2 text-sm"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        handleMediaUpload(qIndex, file)
-                        e.target.value = ""
-                      }
-                    }}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Files are stored locally and served from /media. Pick a type first.
-                  </p>
-
-                  {question.media && (
-                    <div className="rounded-md border border-gray-200 bg-gray-50 p-2">
-                      <div className="flex items-center justify-between text-sm font-semibold text-gray-700">
-                        <span>
-                          {mediaFileName || question.media.url || "No file yet"}
-                        </span>
-                        {libraryEntry && (
-                          <span className="text-xs text-gray-500">
-                            {formatBytes(libraryEntry.size)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {libraryEntry
-                          ? `Used in ${libraryEntry.usedBy.length} question${
-                              libraryEntry.usedBy.length === 1 ? "" : "s"
-                            }`
-                          : question.media.url
-                            ? "External media URL"
-                            : "Upload a file or paste a URL"}
-                      </div>
-                    </div>
-                  )}
-
-                  <label className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-gray-600">
-                      Or paste an external URL
-                    </span>
-                    <Input
-                      value={question.media?.url || question.image || ""}
-                      onChange={(e) => handleMediaUrlChange(qIndex, e.target.value)}
-                      placeholder="https://..."
-                      disabled={!question.media?.type}
-                    />
-                    <span className="text-xs text-gray-500">
-                      Tip: set answer time longer than the clip duration.
-                    </span>
-                  </label>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      className="bg-gray-700"
-                      onClick={() => clearQuestionMedia(qIndex)}
-                      disabled={!question.media}
-                    >
-                      Clear from question
-                    </Button>
+                  <div className="flex gap-2">
                     <Button
                       className="bg-red-500"
-                      onClick={() => handleDeleteMediaFile(qIndex)}
-                      disabled={!mediaFileName || isDeleting}
+                      onClick={() => removeQuestion(qIndex)}
+                      disabled={draft.questions.length <= 1}
                     >
-                      {isDeleting ? "Deleting..." : "Delete file"}
+                      Remove
                     </Button>
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-gray-700">Answers</span>
-                  <Button
-                    className="bg-blue-600"
-                    onClick={() => addAnswer(qIndex)}
-                    disabled={question.answers.length >= 4}
-                  >
-                    Add answer
-                  </Button>
-                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold text-gray-600">Prompt</span>
+                    <Input
+                      value={question.question}
+                      onChange={(e) =>
+                        updateQuestion(qIndex, { question: e.target.value })
+                      }
+                      placeholder="Enter the question"
+                    />
+                  </label>
 
-                <div className="grid gap-2 md:grid-cols-2">
-                  {question.answers.map((answer, aIndex) => (
-                    <div
-                      key={aIndex}
-                      className={clsx(
-                        "flex items-center gap-2 rounded-md border p-2",
-                        question.solution === aIndex
-                          ? "border-green-500"
-                          : "border-gray-200",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name={`solution-${qIndex}`}
-                        checked={question.solution === aIndex}
-                        onChange={() =>
-                          updateQuestion(qIndex, { solution: aIndex })
-                        }
-                      />
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold text-gray-600">
+                        Cooldown (s)
+                      </span>
                       <Input
-                        className="flex-1"
-                        value={answer}
+                        type="number"
+                        value={question.cooldown}
                         onChange={(e) =>
-                          updateAnswer(qIndex, aIndex, e.target.value)
+                          updateQuestion(qIndex, {
+                            cooldown: Number(e.target.value || 0),
+                          })
                         }
-                        placeholder={`Answer ${aIndex + 1}`}
+                        min={0}
                       />
-                      <button
-                        className="rounded-sm px-2 py-1 text-sm font-semibold text-red-500"
-                        onClick={() => removeAnswer(qIndex, aIndex)}
-                        disabled={question.answers.length <= 2}
-                      >
-                        Remove
-                      </button>
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold text-gray-600">
+                        Answer time (s)
+                      </span>
+                      <Input
+                        type="number"
+                        value={question.time}
+                        onChange={(e) =>
+                          updateQuestion(qIndex, { time: Number(e.target.value || 0) })
+                        }
+                        min={5}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold text-gray-600">
+                      Media type
+                    </span>
+                    <select
+                      className="rounded-sm border border-gray-300 p-2 font-semibold"
+                      value={question.media?.type || ""}
+                      onChange={(e) =>
+                        handleMediaType(qIndex, e.target.value as QuestionMedia["type"] | "")
+                      }
+                    >
+                      <option value="">None</option>
+                      {mediaTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="flex flex-col gap-2 rounded-md border border-gray-200 p-3">
+                    <div className="flex items-center justify-between text-sm font-semibold text-gray-600">
+                      <span>Media upload</span>
+                      <span className="text-xs text-gray-500">
+                        {isUploading
+                          ? "Uploading..."
+                          : refreshingLibrary
+                            ? "Refreshing..."
+                            : mediaFileName
+                              ? "Stored"
+                              : "Not saved"}
+                      </span>
                     </div>
-                  ))}
+                    <input
+                      type="file"
+                      accept={
+                        question.media?.type ? acceptByType[question.media.type] : undefined
+                      }
+                      disabled={!question.media?.type || isUploading}
+                      className="rounded-sm border border-dashed border-gray-300 p-2 text-sm"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          handleMediaUpload(qIndex, file)
+                          e.target.value = ""
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-gray-500">
+                      Files are stored locally and served from /media. Pick a type first.
+                    </p>
+
+                    {question.media && (
+                      <div className="rounded-md border border-gray-200 bg-gray-50 p-2">
+                        <div className="flex items-center justify-between text-sm font-semibold text-gray-700">
+                          <span>
+                            {mediaFileName || question.media.url || "No file yet"}
+                          </span>
+                          {libraryEntry && (
+                            <span className="text-xs text-gray-500">
+                              {formatBytes(libraryEntry.size)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {libraryEntry
+                            ? `Used in ${libraryEntry.usedBy.length} question${
+                                libraryEntry.usedBy.length === 1 ? "" : "s"
+                              }`
+                            : question.media.url
+                              ? "External media URL"
+                              : "Upload a file or paste a URL"}
+                        </div>
+                      </div>
+                    )}
+
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-gray-600">
+                        Or paste an external URL
+                      </span>
+                      <Input
+                        value={question.media?.url || question.image || ""}
+                        onChange={(e) => handleMediaUrlChange(qIndex, e.target.value)}
+                        placeholder="https://..."
+                        disabled={!question.media?.type}
+                      />
+                      <span className="text-xs text-gray-500">
+                        Tip: set answer time longer than the clip duration.
+                      </span>
+                    </label>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        className="bg-gray-700"
+                        onClick={() => clearQuestionMedia(qIndex)}
+                        disabled={!question.media}
+                      >
+                        Clear from question
+                      </Button>
+                      <Button
+                        className="bg-red-500"
+                        onClick={() => handleDeleteMediaFile(qIndex)}
+                        disabled={!mediaFileName || isDeleting}
+                      >
+                        {isDeleting ? "Deleting..." : "Delete file"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">Answers</span>
+                    <Button
+                      className="bg-blue-600"
+                      onClick={() => addAnswer(qIndex)}
+                      disabled={question.answers.length >= 4}
+                    >
+                      Add answer
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {question.answers.map((answer, aIndex) => (
+                      <div
+                        key={aIndex}
+                        className={clsx(
+                          "flex items-center gap-2 rounded-md border p-2",
+                          question.solution === aIndex
+                            ? "border-green-500"
+                            : "border-gray-200",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name={`solution-${qIndex}`}
+                          checked={question.solution === aIndex}
+                          onChange={() =>
+                            updateQuestion(qIndex, { solution: aIndex })
+                          }
+                        />
+                        <Input
+                          className="flex-1"
+                          value={answer}
+                          onChange={(e) =>
+                            updateAnswer(qIndex, aIndex, e.target.value)
+                          }
+                          placeholder={`Answer ${aIndex + 1}`}
+                        />
+                        <button
+                          className="rounded-sm px-2 py-1 text-sm font-semibold text-red-500"
+                          onClick={() => removeAnswer(qIndex, aIndex)}
+                          disabled={question.answers.length <= 2}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
 
           <div className="flex justify-center">
             <Button className="bg-blue-600" onClick={addQuestion}>
