@@ -86,6 +86,9 @@ class Registry {
   }
 
   removeGame(gameId: string): boolean {
+    const game = this.games.find((g) => g.gameId === gameId)
+    void game?.clearPersisted?.()
+
     const initialLength = this.games.length
     this.games = this.games.filter((g) => g.gameId !== gameId)
     this.emptyGames = this.emptyGames.filter((g) => g.game.gameId !== gameId)
@@ -125,6 +128,7 @@ class Registry {
 
     const removed = this.emptyGames.filter((g) => !stillEmpty.includes(g))
     const removedGameIds = removed.map((r) => r.game.gameId)
+    removed.forEach((entry) => void entry.game.clearPersisted?.())
 
     this.games = this.games.filter((g) => !removedGameIds.includes(g.gameId))
     this.emptyGames = stillEmpty

@@ -2,6 +2,7 @@ import { Answer, Player, Quizz } from "@rahoot/common/types/game"
 import { Server, Socket } from "@rahoot/common/types/game/socket"
 import { Status, STATUS, StatusDataMap } from "@rahoot/common/types/game/status"
 import Registry from "@rahoot/socket/services/registry"
+import { saveSnapshot, loadSnapshot, deleteSnapshot, GameSnapshot } from "@rahoot/socket/services/persistence"
 import { createInviteCode, timeToPoint } from "@rahoot/socket/utils/game"
 import sleep from "@rahoot/socket/utils/sleep"
 import { v4 as uuid } from "uuid"
@@ -55,8 +56,8 @@ class Game {
     this.gameId = uuid()
     this.manager = {
       id: "",
-      clientId: "",
-      connected: false,
+      clientId: socket.handshake.auth.clientId,
+      connected: true,
     }
     this.inviteCode = ""
     this.started = false
@@ -86,11 +87,8 @@ class Game {
 
     const roomInvite = createInviteCode()
     this.inviteCode = roomInvite
-    this.manager = {
-      id: socket.id,
-      clientId: socket.handshake.auth.clientId,
-      connected: true,
-    }
+    this.manager.id = socket.id
+
     this.quizz = quizz
 
     socket.join(this.gameId)
@@ -102,12 +100,56 @@ class Game {
     console.log(
       `New game created: ${roomInvite} subject: ${this.quizz.subject}`
     )
+    this.persist()
+  }
+
+  static async fromSnapshot(io: Server, snapshot: GameSnapshot) {
+    const game = Object.create(Game.prototype) as Game
+    game.io = io
+    game.gameId = snapshot.gameId
+    game.manager = {
+      id: "",
+      clientId: snapshot.manager?.clientId || "",
+      connected: false,
+    }
+    game.inviteCode = snapshot.inviteCode
+    game.started = snapshot.started
+    game.lastBroadcastStatus = snapshot.lastBroadcastStatus || null
+    game.managerStatus = snapshot.managerStatus || null
+    game.playerStatus = new Map()
+    game.leaderboard = snapshot.leaderboard || []
+    game.tempOldLeaderboard = snapshot.tempOldLeaderboard || null
+    game.quizz = snapshot.quizz
+    game.players = (snapshot.players || []).map((p: Player) => ({
+      ...p,
+      id: "",
+      connected: false,
+    }))
+    game.round = snapshot.round || {
+      playersAnswers: [],
+      currentQuestion: 0,
+      startTime: 0,
+    }
+    game.cooldown = {
+      active: snapshot.cooldown?.active || false,
+      paused: snapshot.cooldown?.paused || false,
+      remaining: snapshot.cooldown?.remaining || 0,
+      timer: null,
+      resolve: null,
+    }
+
+    if (game.cooldown.active && game.cooldown.remaining > 0 && !game.cooldown.paused) {
+      game.startCooldown(game.cooldown.remaining)
+    }
+
+    return game
   }
 
   broadcastStatus<T extends Status>(status: T, data: StatusDataMap[T]) {
     const statusData = { name: status, data }
     this.lastBroadcastStatus = statusData
     this.io.to(this.gameId).emit("game:status", statusData)
+    this.persist()
   }
 
   sendStatus<T extends Status>(
@@ -124,6 +166,50 @@ class Game {
     }
 
     this.io.to(target).emit("game:status", statusData)
+    this.persist()
+  }
+
+  toSnapshot(): GameSnapshot {
+    return {
+      gameId: this.gameId,
+      inviteCode: this.inviteCode,
+      started: this.started,
+      manager: {
+        clientId: this.manager.clientId,
+      },
+      lastBroadcastStatus: this.lastBroadcastStatus,
+      managerStatus: this.managerStatus,
+      leaderboard: this.leaderboard,
+      tempOldLeaderboard: this.tempOldLeaderboard,
+      quizz: this.quizz,
+      players: this.players.map((p) => ({
+        ...p,
+        id: undefined,
+        connected: false,
+      })),
+      round: this.round,
+      cooldown: {
+        active: this.cooldown.active,
+        paused: this.cooldown.paused,
+        remaining: this.cooldown.remaining,
+      },
+    }
+  }
+
+  async persist() {
+    try {
+      await saveSnapshot(this.gameId, this.toSnapshot())
+    } catch (error) {
+      console.error("Failed to persist game snapshot", error)
+    }
+  }
+
+  async clearPersisted() {
+    try {
+      await deleteSnapshot(this.gameId)
+    } catch (error) {
+      console.error("Failed to delete game snapshot", error)
+    }
   }
 
   join(socket: Socket, username: string) {
@@ -301,10 +387,12 @@ class Game {
         }
 
         this.io.to(this.gameId).emit("game:cooldown", this.cooldown.remaining)
+        this.persist()
       }
 
       // initial emit
       this.io.to(this.gameId).emit("game:cooldown", this.cooldown.remaining)
+      this.persist()
 
       this.cooldown.timer = setInterval(tick, 1000)
     })
@@ -318,6 +406,7 @@ class Game {
     this.cooldown.active = false
     this.cooldown.paused = false
     this.io.to(this.gameId).emit("game:cooldownPause", false)
+    this.persist()
     this.finishCooldown()
   }
 
@@ -342,6 +431,7 @@ class Game {
 
     this.cooldown.paused = true
     this.io.to(this.gameId).emit("game:cooldownPause", true)
+    this.persist()
   }
 
   resumeCooldown(socket: Socket) {
@@ -351,6 +441,7 @@ class Game {
 
     this.cooldown.paused = false
     this.io.to(this.gameId).emit("game:cooldownPause", false)
+    this.persist()
   }
 
   skipQuestionIntro(socket: Socket) {
@@ -387,6 +478,7 @@ class Game {
     await this.startCooldown(3)
 
     this.newRound()
+    this.persist()
   }
 
   async newRound() {
@@ -446,6 +538,7 @@ class Game {
     }
 
     this.showResults(question)
+    this.persist()
   }
 
   showResults(question: any) {
@@ -504,13 +597,14 @@ class Game {
       correct: question.solution,
       answers: question.answers,
       image: question.image,
-    media: question.media,
+   media: question.media,
     })
 
     this.leaderboard = sortedPlayers
     this.tempOldLeaderboard = oldLeaderboard
 
     this.round.playersAnswers = []
+    this.persist()
   }
   selectAnswer(socket: Socket, answerId: number) {
     const player = this.players.find((player) => player.id === socket.id)
@@ -543,6 +637,7 @@ class Game {
     if (this.round.playersAnswers.length === this.players.length) {
       this.abortCooldown()
     }
+    this.persist()
   }
 
   nextRound(socket: Socket) {
@@ -585,6 +680,7 @@ class Game {
         subject: this.quizz.subject,
         top: this.leaderboard.slice(0, 3),
       })
+      this.clearPersisted()
 
       return
     }
@@ -599,6 +695,7 @@ class Game {
     })
 
     this.tempOldLeaderboard = null
+    this.persist()
   }
 }
 

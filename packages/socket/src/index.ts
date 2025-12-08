@@ -4,6 +4,7 @@ import env from "@rahoot/socket/env"
 import Config from "@rahoot/socket/services/config"
 import Game from "@rahoot/socket/services/game"
 import Registry from "@rahoot/socket/services/registry"
+import { loadSnapshot } from "@rahoot/socket/services/persistence"
 import { withGame } from "@rahoot/socket/utils/game"
 import { Server as ServerIO } from "socket.io"
 
@@ -34,6 +35,24 @@ io.on("connection", (socket) => {
     `A user connected: socketId: ${socket.id}, clientId: ${socket.handshake.auth.clientId}`
   )
 
+  const ensureGame = async (gameId: string) => {
+    let game = registry.getGameById(gameId)
+    if (game) return game
+
+    try {
+      const snapshot = await loadSnapshot(gameId)
+      if (snapshot) {
+        const restored = await Game.fromSnapshot(io, snapshot)
+        registry.addGame(restored)
+        return restored
+      }
+    } catch (error) {
+      console.error("Failed to restore game", error)
+    }
+
+    return null
+  }
+
   socket.on("player:reconnect", ({ gameId }) => {
     const game = registry.getPlayerGame(gameId, socket.handshake.auth.clientId)
 
@@ -43,11 +62,22 @@ io.on("connection", (socket) => {
       return
     }
 
-    socket.emit("game:reset", "Game not found")
+    ensureGame(gameId).then((restored) => {
+      if (restored) {
+        restored.reconnect(socket)
+
+        return
+      }
+
+      socket.emit("game:reset", "Game not found")
+    })
   })
 
   socket.on("manager:reconnect", ({ gameId }) => {
-    const game = registry.getManagerGame(gameId, socket.handshake.auth.clientId)
+    const game = registry.getManagerGame(
+      gameId,
+      socket.handshake.auth.clientId
+    )
 
     if (game) {
       game.reconnect(socket)
@@ -55,7 +85,15 @@ io.on("connection", (socket) => {
       return
     }
 
-    socket.emit("game:reset", "Game expired")
+    ensureGame(gameId).then((restored) => {
+      if (restored) {
+        restored.reconnect(socket)
+
+        return
+      }
+
+      socket.emit("game:reset", "Game expired")
+    })
   })
 
   socket.on("manager:auth", (password) => {
