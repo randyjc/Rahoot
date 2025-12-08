@@ -1,12 +1,23 @@
 import { deleteMediaFile } from "@rahoot/web/server/media"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-export async function DELETE(_request: Request, { params }: { params: { file: string } }) {
+type RouteContext = {
+  params?: Promise<Record<string, string | string[] | undefined>>
+}
+
+export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
-    const decoded = decodeURIComponent(params.file)
+    const params = context.params ? await context.params : undefined
+    const fileParam = Array.isArray(params?.file) ? params?.file[0] : params?.file
+
+    if (!fileParam) {
+      return NextResponse.json({ error: "Missing file parameter" }, { status: 400 })
+    }
+
+    const decoded = decodeURIComponent(fileParam)
     await deleteMediaFile(decoded)
 
     return NextResponse.json({ success: true })
