@@ -281,18 +281,6 @@ io.on("connection", (socket) => {
       return
     }
 
-    if (!game.started) {
-      game.players = game.players.filter((p) => p.id !== socket.id)
-
-      io.to(game.manager.id).emit("manager:removePlayer", player.id)
-      io.to(game.manager.id).emit("manager:players", game.players)
-      io.to(game.gameId).emit("game:totalPlayers", game.players.length)
-
-      console.log(`Removed player ${player.username} from game ${game.gameId}`)
-
-      return
-    }
-
     player.connected = false
     io.to(game.gameId).emit("game:totalPlayers", game.players.length)
     io.to(game.manager.id).emit("manager:players", game.players)

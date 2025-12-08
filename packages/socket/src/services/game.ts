@@ -213,13 +213,18 @@ class Game {
   }
 
   join(socket: Socket, username: string) {
-    const isAlreadyConnected = this.players.find(
+    const existing = this.players.find(
       (p) => p.clientId === socket.handshake.auth.clientId
     )
 
-    if (isAlreadyConnected) {
-      socket.emit("game:errorMessage", "Player already connected")
-
+    if (existing) {
+      // Reconnect existing player (even before game start)
+      existing.id = socket.id
+      existing.connected = true
+      if (username) existing.username = username
+      socket.join(this.gameId)
+      this.io.to(this.manager.id).emit("manager:players", this.players)
+      socket.emit("game:successJoin", this.gameId)
       return
     }
 
