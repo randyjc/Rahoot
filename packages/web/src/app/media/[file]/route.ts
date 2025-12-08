@@ -2,6 +2,7 @@ import Config from "@rahoot/socket/services/config"
 import { mimeForStoredFile } from "@rahoot/web/server/media"
 import fs from "fs"
 import { promises as fsp } from "fs"
+import { Readable } from "node:stream"
 import path from "path"
 import { NextRequest, NextResponse } from "next/server"
 
@@ -42,14 +43,20 @@ export async function GET(
       const start = Number(rawStart)
       const end = rawEnd ? Number(rawEnd) : fileSize - 1
 
-      if (Number.isNaN(start) || Number.isNaN(end) || start > end) {
+      if (
+        Number.isNaN(start) ||
+        Number.isNaN(end) ||
+        start < 0 ||
+        end >= fileSize ||
+        start > end
+      ) {
         return new NextResponse(null, { status: 416 })
       }
 
       const chunkSize = end - start + 1
       const stream = fs.createReadStream(filePath, { start, end })
 
-      return new NextResponse(stream as any, {
+      return new NextResponse(Readable.toWeb(stream) as any, {
         status: 206,
         headers: {
           "Content-Range": `bytes ${start}-${end}/${fileSize}`,
@@ -61,9 +68,9 @@ export async function GET(
       })
     }
 
-    const buffer = await fsp.readFile(filePath)
+    const stream = fs.createReadStream(filePath)
 
-    return new NextResponse(buffer, {
+    return new NextResponse(Readable.toWeb(stream) as any, {
       status: 200,
       headers: {
         "Content-Type": mime,
