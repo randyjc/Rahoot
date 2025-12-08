@@ -4,11 +4,7 @@ import { NextResponse } from "next/server"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-type Params = {
-  params: { file: string }
-}
-
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(_request: Request, { params }: { params: { file: string } }) {
   try {
     const decoded = decodeURIComponent(params.file)
     await deleteMediaFile(decoded)
