@@ -65,6 +65,7 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
   const [uploading, setUploading] = useState<Record<number, boolean>>({})
   const [deleting, setDeleting] = useState<Record<number, boolean>>({})
   const [refreshingLibrary, setRefreshingLibrary] = useState(false)
+  const [probing, setProbing] = useState<Record<number, boolean>>({})
 
   useEvent("manager:quizzLoaded", (quizz) => {
     setDraft(quizz)
@@ -257,10 +258,84 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
     }
 
     setQuestionMedia(qIndex, nextMedia)
+    adjustTimingWithMedia(qIndex, nextMedia)
   }
 
   const clearQuestionMedia = (qIndex: number) => {
     setQuestionMedia(qIndex, undefined)
+  }
+
+  const probeMediaDuration = async (url: string, type: QuestionMedia["type"]) => {
+    if (!url || (type !== "audio" && type !== "video")) {
+      return null
+    }
+
+    try {
+      const el = document.createElement(type)
+      el.preload = "metadata"
+      el.src = url
+
+      await new Promise<void>((resolve, reject) => {
+        const cleanup = () => {
+          el.onloadedmetadata = null
+          el.onerror = null
+        }
+        el.onloadedmetadata = () => {
+          cleanup()
+          resolve()
+        }
+        el.onerror = () => {
+          cleanup()
+          reject(new Error("Failed to load media metadata"))
+        }
+      })
+
+      const duration = el.duration
+      return Number.isFinite(duration) && duration > 0 ? duration : null
+    } catch (error) {
+      console.warn("Failed to probe media duration", error)
+      return null
+    }
+  }
+
+  const adjustTimingWithMedia = async (
+    qIndex: number,
+    media: QuestionMedia | undefined,
+  ) => {
+    if (!draft || !media?.url || !media.type || media.type === "image") {
+      return
+    }
+
+    setProbing((prev) => ({ ...prev, [qIndex]: true }))
+
+    try {
+      const duration = await probeMediaDuration(media.url, media.type)
+      if (!duration || !draft) {
+        return
+      }
+
+      const rounded = Math.ceil(duration)
+      const buffer = 3
+      const minCooldown = rounded
+      const minAnswer = rounded + buffer
+      const question = draft.questions[qIndex]
+
+      const nextCooldown = Math.max(question.cooldown, minCooldown)
+      const nextTime = Math.max(question.time, minAnswer)
+
+      if (nextCooldown !== question.cooldown || nextTime !== question.time) {
+        updateQuestion(qIndex, {
+          cooldown: nextCooldown,
+          time: nextTime,
+        })
+        toast.success(
+          `Adjusted timing to media length (~${rounded}s, answers ${nextTime}s)`,
+          { id: `timing-${qIndex}` },
+        )
+      }
+    } finally {
+      setProbing((prev) => ({ ...prev, [qIndex]: false }))
+    }
   }
 
   const handleMediaUpload = async (qIndex: number, file: File) => {
@@ -292,6 +367,11 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
       const type = uploaded.type
 
       setQuestionMedia(qIndex, {
+        type,
+        url: uploaded.url,
+        fileName: uploaded.fileName,
+      })
+      adjustTimingWithMedia(qIndex, {
         type,
         url: uploaded.url,
         fileName: uploaded.fileName,
@@ -509,18 +589,20 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
                     </select>
                   </label>
 
-                  <div className="flex flex-col gap-2 rounded-md border border-gray-200 p-3">
-                    <div className="flex items-center justify-between text-sm font-semibold text-gray-600">
-                      <span>Media upload</span>
-                      <span className="text-xs text-gray-500">
-                        {isUploading
-                          ? "Uploading..."
-                          : refreshingLibrary
-                            ? "Refreshing..."
-                            : mediaFileName
-                              ? "Stored"
-                              : "Not saved"}
-                      </span>
+                <div className="flex flex-col gap-2 rounded-md border border-gray-200 p-3">
+                  <div className="flex items-center justify-between text-sm font-semibold text-gray-600">
+                    <span>Media upload</span>
+                    <span className="text-xs text-gray-500">
+                      {isUploading
+                        ? "Uploading..."
+                        : probing[qIndex]
+                          ? "Probing..."
+                        : refreshingLibrary
+                          ? "Refreshing..."
+                          : mediaFileName
+                            ? "Stored"
+                            : "Not saved"}
+                  </span>
                     </div>
                     <input
                       type="file"

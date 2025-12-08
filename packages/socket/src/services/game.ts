@@ -293,6 +293,18 @@ class Game {
     this.cooldown.active &&= false
   }
 
+  skipQuestionIntro(socket: Socket) {
+    if (this.manager.id !== socket.id) {
+      return
+    }
+
+    if (!this.started) {
+      return
+    }
+
+    this.abortCooldown()
+  }
+
   async start(socket: Socket) {
     if (this.manager.id !== socket.id) {
       return
@@ -346,11 +358,11 @@ class Game {
     this.broadcastStatus(STATUS.SHOW_QUESTION, {
       question: question.question,
       image: question.image,
-    media: question.media,
+      media: question.media,
       cooldown: question.cooldown,
     })
 
-    await sleep(question.cooldown)
+    await this.startCooldown(question.cooldown)
 
     if (!this.started) {
       return
@@ -362,7 +374,7 @@ class Game {
       question: question.question,
       answers: question.answers,
       image: question.image,
-    media: question.media,
+      media: question.media,
       time: question.time,
       totalPlayer: this.players.length,
     })

@@ -65,6 +65,11 @@ const ManagerGame = () => {
 
         break
 
+      case STATUS.SHOW_QUESTION:
+        socket?.emit("manager:skipQuestionIntro", { gameId })
+
+        break
+
       case STATUS.SELECT_ANSWER:
         socket?.emit("manager:abortQuiz", { gameId })
 

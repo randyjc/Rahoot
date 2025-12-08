@@ -171,6 +171,10 @@ io.on("connection", (socket) => {
     withGame(gameId, socket, (game) => game.nextRound(socket))
   )
 
+  socket.on("manager:skipQuestionIntro", ({ gameId }) =>
+    withGame(gameId, socket, (game) => game.skipQuestionIntro(socket))
+  )
+
   socket.on("manager:showLeaderboard", ({ gameId }) =>
     withGame(gameId, socket, (game) => game.showLeaderboard())
   )
