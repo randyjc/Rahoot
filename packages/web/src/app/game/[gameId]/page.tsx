@@ -35,6 +35,12 @@ const Game = () => {
       setStatus(status.name, status.data)
       setPlayer(player)
       setQuestionStates(currentQuestion)
+      try {
+        localStorage.setItem("last_game_id", gameId)
+        if (player?.username) {
+          localStorage.setItem("last_username", player.username)
+        }
+      } catch {}
     },
   )
 
@@ -48,6 +54,10 @@ const Game = () => {
     router.replace("/")
     reset()
     setQuestionStates(null)
+    try {
+      localStorage.removeItem("last_game_id")
+      localStorage.removeItem("last_username")
+    } catch {}
     toast.error(message)
   })
 

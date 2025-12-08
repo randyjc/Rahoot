@@ -33,6 +33,10 @@ const Username = () => {
   useEvent("game:successJoin", (gameId) => {
     setStatus(STATUS.WAIT, { text: "Waiting for the players" })
     login(username)
+    try {
+      localStorage.setItem("last_game_id", gameId)
+      localStorage.setItem("last_username", username)
+    } catch {}
 
     router.replace(`/game/${gameId}`)
   })
