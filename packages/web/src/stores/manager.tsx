@@ -11,7 +11,7 @@ type ManagerStore<T> = {
   setGameId: (_gameId: string | null) => void
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
   resetStatus: () => void
-  setPlayers: (_players: Player[]) => void
+  setPlayers: (_players: Player[] | ((_prev: Player[]) => Player[])) => void
 
   reset: () => void
 }
@@ -30,7 +30,10 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
   setStatus: (name, data) => set({ status: createStatus(name, data) }),
   resetStatus: () => set({ status: null }),
 
-  setPlayers: (players) => set({ players }),
+  setPlayers: (players) =>
+    set((state) => ({
+      players: typeof players === "function" ? players(state.players) : players,
+    })),
 
   reset: () => set(initialState),
 }))
