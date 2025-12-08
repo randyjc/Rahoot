@@ -126,11 +126,12 @@ const QuestionMedia = ({ media, alt, onPlayChange }: Props) => {
           controls: 0,
           disablekb: 1,
           fs: 0,
+          enablejsapi: 1,
           origin:
             typeof window !== "undefined" ? window.location.origin : undefined,
           showinfo: 0,
         },
-        host: "https://www.youtube-nocookie.com",
+        host: "https://www.youtube.com",
         events: {
           onReady: () => {
             setYoutubeReady(true)
