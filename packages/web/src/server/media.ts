@@ -4,6 +4,11 @@ import fs from "fs"
 import { promises as fsp } from "fs"
 import path from "path"
 
+const toBytes = (valueMb: number) => valueMb * 1024 * 1024
+
+const envMaxMb = Number(process.env.MEDIA_MAX_UPLOAD_MB || process.env.MAX_UPLOAD_MB || 50)
+const MAX_UPLOAD_SIZE = Number.isFinite(envMaxMb) && envMaxMb > 0 ? toBytes(envMaxMb) : toBytes(50)
+
 export type StoredMedia = {
   fileName: string
   url: string
@@ -17,8 +22,6 @@ export type StoredMedia = {
     question: string
   }[]
 }
-
-const MAX_UPLOAD_SIZE = 50 * 1024 * 1024 // 50MB
 
 const ensureMediaFolder = () => {
   Config.ensureBaseFolders()
@@ -183,7 +186,9 @@ export const storeMediaFile = async (file: File): Promise<StoredMedia> => {
   const buffer = Buffer.from(arrayBuffer)
 
   if (buffer.byteLength > MAX_UPLOAD_SIZE) {
-    throw new Error("File is too large. Max 50MB.")
+    throw new Error(
+      `File is too large. Max ${Math.round(MAX_UPLOAD_SIZE / 1024 / 1024)}MB.`,
+    )
   }
 
   const targetFolder = ensureMediaFolder()
