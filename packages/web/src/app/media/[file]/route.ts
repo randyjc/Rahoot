@@ -3,16 +3,16 @@ import { mimeForStoredFile } from "@rahoot/web/server/media"
 import fs from "fs"
 import { promises as fsp } from "fs"
 import path from "path"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-type Params = {
-  params: { file: string }
-}
-
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(
+  _request: NextRequest,
+  context: { params: Promise<{ file: string }> },
+) {
+  const params = await context.params
   const safeName = path.basename(params.file)
 
   if (safeName !== params.file) {
