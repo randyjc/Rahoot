@@ -1,6 +1,6 @@
 "use client"
 
-import { QuestionMedia } from "@rahoot/common/types/game"
+import type { QuestionMedia as QuestionMediaType } from "@rahoot/common/types/game"
 import clsx from "clsx"
 import { useEffect, useMemo, useRef, useState } from "react"
 
@@ -80,7 +80,7 @@ const extractYoutubeId = (url: string) => {
 }
 
 type Props = {
-  media?: QuestionMedia
+  media?: QuestionMediaType
   alt: string
   onPlayChange?: (_playing: boolean) => void
 }

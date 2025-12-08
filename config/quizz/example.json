@@ -11,7 +11,7 @@
       ],
       "media": {
         "type": "audio",
-        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/4/4c/Beethoven_Moonlight_1st_movement.ogg/Beethoven_Moonlight_1st_movement.ogg.mp3"
+        "url": "https://file-examples.com/storage/fee95f49ad692e9489b0fab/2017/11/file_example_WAV_1MG.wav"
       },
       "solution": 1,
       "cooldown": 5,
@@ -32,22 +32,6 @@
       "solution": 3,
       "cooldown": 5,
       "time": 60
-    },
-    {
-      "question": "What kind of animal is featured here?",
-      "answers": [
-        "Dolphin",
-        "Panda",
-        "Horse",
-        "Penguin"
-      ],
-      "media": {
-        "type": "youtube",
-        "url": "https://www.youtube.com/watch?v=2k1qW3D0q6c"
-      },
-      "solution": 2,
-      "cooldown": 5,
-      "time": 40
     }
   ]
 }

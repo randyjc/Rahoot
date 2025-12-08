@@ -1,6 +1,6 @@
 "use client"
 
-import { QuestionMedia, QuizzWithId } from "@rahoot/common/types/game"
+import type { QuestionMedia, QuizzWithId } from "@rahoot/common/types/game"
 import Button from "@rahoot/web/components/Button"
 import Input from "@rahoot/web/components/Input"
 import { useEvent, useSocket } from "@rahoot/web/contexts/socketProvider"
