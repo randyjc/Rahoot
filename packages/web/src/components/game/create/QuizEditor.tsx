@@ -274,20 +274,31 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
       el.crossOrigin = "anonymous"
       el.preload = "metadata"
       el.src = url
+      el.load()
 
       await new Promise<void>((resolve, reject) => {
         const cleanup = () => {
           el.onloadedmetadata = null
+          el.onloadeddata = null
+          el.oncanplaythrough = null
           el.onerror = null
         }
-        el.onloadedmetadata = () => {
+        const done = () => {
           cleanup()
           resolve()
         }
+        el.onloadedmetadata = done
+        el.onloadeddata = done
+        el.oncanplaythrough = done
         el.onerror = () => {
           cleanup()
           reject(new Error("Failed to load media metadata"))
         }
+        // safety timeout
+        setTimeout(() => {
+          cleanup()
+          reject(new Error("Timed out loading media metadata"))
+        }, 5000)
       })
 
       const duration = el.duration
@@ -657,18 +668,20 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
                     </span>
                   </label>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      className="bg-gray-800"
-                      onClick={() => adjustTimingWithMedia(qIndex, question.media)}
-                      disabled={!question.media?.url || probing[qIndex]}
-                    >
-                      {probing[qIndex] ? "Probing..." : "Set timing from media"}
-                    </Button>
-                    <span className="text-xs text-gray-500">
-                      Probes audio/video duration and bumps cooldown/answer time if needed.
-                    </span>
-                  </div>
+                  {question.media?.type !== "image" && question.media?.url && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        className="bg-gray-800"
+                        onClick={() => adjustTimingWithMedia(qIndex, question.media)}
+                        disabled={probing[qIndex]}
+                      >
+                        {probing[qIndex] ? "Probing..." : "Set timing from media"}
+                      </Button>
+                      <span className="text-xs text-gray-500">
+                        Probes audio/video duration and bumps cooldown/answer time if needed.
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap gap-2">
                     <Button
