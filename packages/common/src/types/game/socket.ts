@@ -31,6 +31,7 @@ export interface ServerToClientEvents {
   "game:errorMessage": (_message: string) => void
   "game:startCooldown": () => void
   "game:cooldown": (_count: number) => void
+  "game:cooldownPause": (_paused: boolean) => void
   "game:reset": (_message: string) => void
   "game:updateQuestion": (_data: { current: number; total: number }) => void
   "game:playerAnswer": (_count: number) => void
@@ -63,6 +64,7 @@ export interface ServerToClientEvents {
   "manager:playerKicked": (_playerId: string) => void
   "manager:quizzLoaded": (_quizz: QuizzWithId) => void
   "manager:quizzSaved": (_quizz: QuizzWithId) => void
+  "manager:quizzDeleted": (_id: string) => void
 }
 
 export interface ClientToServerEvents {
@@ -73,8 +75,11 @@ export interface ClientToServerEvents {
   "manager:kickPlayer": (_message: { gameId: string; playerId: string }) => void
   "manager:startGame": (_message: MessageGameId) => void
   "manager:abortQuiz": (_message: MessageGameId) => void
+  "manager:pauseCooldown": (_message: MessageGameId) => void
+  "manager:resumeCooldown": (_message: MessageGameId) => void
   "manager:skipQuestionIntro": (_message: MessageGameId) => void
   "manager:nextQuestion": (_message: MessageGameId) => void
+  "manager:deleteQuizz": (_message: { id: string }) => void
   "manager:showLeaderboard": (_message: MessageGameId) => void
   "manager:getQuizz": (_quizzId: string) => void
   "manager:saveQuizz": (_payload: { id: string | null; quizz: Quizz }) => void

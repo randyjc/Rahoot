@@ -40,7 +40,10 @@ class Game {
 
   cooldown: {
     active: boolean
-    ms: number
+    paused: boolean
+    remaining: number
+    timer: NodeJS.Timeout | null
+    resolve: (() => void) | null
   }
 
   constructor(io: Server, socket: Socket, quizz: Quizz) {
@@ -75,7 +78,10 @@ class Game {
 
     this.cooldown = {
       active: false,
-      ms: 0,
+      paused: false,
+      remaining: 0,
+      timer: null,
+      resolve: null,
     }
 
     const roomInvite = createInviteCode()
@@ -271,26 +277,80 @@ class Game {
     }
 
     this.cooldown.active = true
-    let count = seconds - 1
+    this.cooldown.paused = false
+    this.cooldown.remaining = seconds
 
     return new Promise<void>((resolve) => {
-      const cooldownTimeout = setInterval(() => {
-        if (!this.cooldown.active || count <= 0) {
-          this.cooldown.active = false
-          clearInterval(cooldownTimeout)
-          resolve()
+      this.cooldown.resolve = resolve
 
+      const tick = () => {
+        if (!this.cooldown.active) {
+          this.finishCooldown()
           return
         }
 
-        this.io.to(this.gameId).emit("game:cooldown", count)
-        count -= 1
-      }, 1000)
+        if (this.cooldown.paused) {
+          return
+        }
+
+        this.cooldown.remaining -= 1
+
+        if (this.cooldown.remaining <= 0) {
+          this.finishCooldown()
+          return
+        }
+
+        this.io.to(this.gameId).emit("game:cooldown", this.cooldown.remaining)
+      }
+
+      // initial emit
+      this.io.to(this.gameId).emit("game:cooldown", this.cooldown.remaining)
+
+      this.cooldown.timer = setInterval(tick, 1000)
     })
   }
 
   abortCooldown() {
-    this.cooldown.active &&= false
+    if (!this.cooldown.active) {
+      return
+    }
+
+    this.cooldown.active = false
+    this.cooldown.paused = false
+    this.io.to(this.gameId).emit("game:cooldownPause", false)
+    this.finishCooldown()
+  }
+
+  finishCooldown() {
+    if (this.cooldown.timer) {
+      clearInterval(this.cooldown.timer)
+    }
+    this.cooldown.timer = null
+    this.cooldown.active = false
+    this.cooldown.paused = false
+    this.cooldown.remaining = 0
+    if (this.cooldown.resolve) {
+      this.cooldown.resolve()
+    }
+    this.cooldown.resolve = null
+  }
+
+  pauseCooldown(socket: Socket) {
+    if (this.manager.id !== socket.id || !this.cooldown.active || this.cooldown.paused) {
+      return
+    }
+
+    this.cooldown.paused = true
+    this.io.to(this.gameId).emit("game:cooldownPause", true)
+  }
+
+  resumeCooldown(socket: Socket) {
+    if (this.manager.id !== socket.id || !this.cooldown.active || !this.cooldown.paused) {
+      return
+    }
+
+    this.cooldown.paused = false
+    this.io.to(this.gameId).emit("game:cooldownPause", false)
   }
 
   skipQuestionIntro(socket: Socket) {

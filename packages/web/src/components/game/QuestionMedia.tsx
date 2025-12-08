@@ -2,6 +2,7 @@
 
 import type { QuestionMedia as QuestionMediaType } from "@rahoot/common/types/game"
 import clsx from "clsx"
+import { useState } from "react"
 
 type Props = {
   media?: QuestionMediaType
@@ -10,6 +11,8 @@ type Props = {
 }
 
 const QuestionMedia = ({ media, alt, onPlayChange }: Props) => {
+  const [zoomed, setZoomed] = useState(false)
+
   if (!media) {
     return null
   }
@@ -19,13 +22,28 @@ const QuestionMedia = ({ media, alt, onPlayChange }: Props) => {
   switch (media.type) {
     case "image":
       return (
-        <div className={containerClass}>
+        <>
+          <div className={containerClass}>
           <img
             alt={alt}
             src={media.url}
-            className="m-4 h-full max-h-[400px] min-h-[200px] w-auto max-w-full rounded-md object-contain shadow-lg"
+              className="m-4 h-full max-h-[400px] min-h-[200px] w-auto max-w-full cursor-zoom-in rounded-md object-contain shadow-lg"
+              onClick={() => setZoomed(true)}
           />
         </div>
+          {zoomed && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+              onClick={() => setZoomed(false)}
+            >
+              <img
+                src={media.url}
+                alt={alt}
+                className="max-h-[90vh] max-w-[90vw] rounded-md shadow-2xl"
+              />
+            </div>
+          )}
+        </>
       )
 
     case "audio":

@@ -214,6 +214,18 @@ class Config {
     return this.getQuizz(finalId)
   }
 
+  static deleteQuizz(id: string) {
+    this.ensureBaseFolders()
+    const filePath = getPath(`quizz/${id}.json`)
+
+    if (!fs.existsSync(filePath)) {
+      return false
+    }
+
+    fs.unlinkSync(filePath)
+    return true
+  }
+
   static getMediaPath(fileName: string = "") {
     this.ensureBaseFolders()
 

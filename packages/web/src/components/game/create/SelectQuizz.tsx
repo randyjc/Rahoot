@@ -8,9 +8,10 @@ type Props = {
   quizzList: QuizzWithId[]
   onSelect: (_id: string) => void
   onManage?: () => void
+  onMedia?: () => void
 }
 
-const SelectQuizz = ({ quizzList, onSelect, onManage }: Props) => {
+const SelectQuizz = ({ quizzList, onSelect, onManage, onMedia }: Props) => {
   const [selected, setSelected] = useState<string | null>(null)
 
   const handleSelect = (id: string) => () => {
@@ -35,14 +36,24 @@ const SelectQuizz = ({ quizzList, onSelect, onManage }: Props) => {
     <div className="z-10 flex w-full max-w-md flex-col gap-4 rounded-md bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Select a quizz</h1>
-        {onManage && (
-          <button
-            className="text-sm font-semibold text-primary underline"
-            onClick={onManage}
-          >
-            Manage
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {onMedia && (
+            <button
+              className="text-sm font-semibold text-gray-700 underline"
+              onClick={onMedia}
+            >
+              Media
+            </button>
+          )}
+          {onManage && (
+            <button
+              className="text-sm font-semibold text-primary underline"
+              onClick={onManage}
+            >
+              Manage
+            </button>
+          )}
+        </div>
       </div>
       <div className="flex flex-col items-center justify-center">
         <div className="w-full space-y-2">

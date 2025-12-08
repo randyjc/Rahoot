@@ -111,6 +111,27 @@ io.on("connection", (socket) => {
     }
   })
 
+  socket.on("manager:deleteQuizz", ({ id }) => {
+    if (!id) {
+      socket.emit("manager:errorMessage", "Invalid quizz id")
+      return
+    }
+
+    try {
+      const deleted = Config.deleteQuizz(id)
+      if (!deleted) {
+        socket.emit("manager:errorMessage", "Quizz not found")
+        return
+      }
+
+      socket.emit("manager:quizzDeleted", id)
+      socket.emit("manager:quizzList", Config.quizz())
+    } catch (error) {
+      console.error("Failed to delete quizz", error)
+      socket.emit("manager:errorMessage", "Failed to delete quizz")
+    }
+  })
+
   socket.on("game:create", (quizzId) => {
     const quizzList = Config.quizz()
     const quizz = quizzList.find((q) => q.id === quizzId)
@@ -165,6 +186,14 @@ io.on("connection", (socket) => {
 
   socket.on("manager:abortQuiz", ({ gameId }) =>
     withGame(gameId, socket, (game) => game.abortRound(socket))
+  )
+
+  socket.on("manager:pauseCooldown", ({ gameId }) =>
+    withGame(gameId, socket, (game) => game.pauseCooldown(socket))
+  )
+
+  socket.on("manager:resumeCooldown", ({ gameId }) =>
+    withGame(gameId, socket, (game) => game.resumeCooldown(socket))
   )
 
   socket.on("manager:nextQuestion", ({ gameId }) =>

@@ -16,6 +16,7 @@ import { useQuestionStore } from "@rahoot/web/stores/question"
 import { GAME_STATE_COMPONENTS_MANAGER } from "@rahoot/web/utils/constants"
 import { useParams, useRouter } from "next/navigation"
 import toast from "react-hot-toast"
+import { useState } from "react"
 
 const ManagerGame = () => {
   const router = useRouter()
@@ -24,6 +25,7 @@ const ManagerGame = () => {
   const { gameId, status, setGameId, setStatus, setPlayers, reset } =
     useManagerStore()
   const { setQuestionStates } = useQuestionStore()
+  const [cooldownPaused, setCooldownPaused] = useState(false)
 
   useEvent("game:status", ({ name, data }) => {
     if (name in GAME_STATE_COMPONENTS_MANAGER) {
@@ -52,6 +54,10 @@ const ManagerGame = () => {
     reset()
     setQuestionStates(null)
     toast.error(message)
+  })
+
+  useEvent("game:cooldownPause", (isPaused) => {
+    setCooldownPaused(isPaused)
   })
 
   const handleSkip = () => {
@@ -84,6 +90,15 @@ const ManagerGame = () => {
         socket?.emit("manager:nextQuestion", { gameId })
 
         break
+    }
+  }
+
+  const handlePauseToggle = () => {
+    if (!gameId) return
+    if (cooldownPaused) {
+      socket?.emit("manager:resumeCooldown", { gameId })
+    } else {
+      socket?.emit("manager:pauseCooldown", { gameId })
     }
   }
 
@@ -132,7 +147,16 @@ const ManagerGame = () => {
   }
 
   return (
-    <GameWrapper statusName={status?.name} onNext={handleSkip} manager>
+    <GameWrapper
+      statusName={status?.name}
+      onNext={handleSkip}
+      onPause={handlePauseToggle}
+      paused={cooldownPaused}
+      showPause={
+        status?.name === STATUS.SHOW_QUESTION || status?.name === STATUS.SELECT_ANSWER
+      }
+      manager
+    >
       {component}
     </GameWrapper>
   )

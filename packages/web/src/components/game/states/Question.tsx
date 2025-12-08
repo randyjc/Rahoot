@@ -3,7 +3,7 @@
 import { CommonStatusDataMap } from "@rahoot/common/types/game/status"
 import QuestionMedia from "@rahoot/web/components/game/QuestionMedia"
 import { SFX_SHOW_SOUND } from "@rahoot/web/utils/constants"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import useSound from "use-sound"
 
 type Props = {
@@ -12,10 +12,22 @@ type Props = {
 
 const Question = ({ data: { question, image, media, cooldown } }: Props) => {
   const [sfxShow] = useSound(SFX_SHOW_SOUND, { volume: 0.5 })
+  const [seconds, setSeconds] = useState(cooldown)
+  const [paused, setPaused] = useState(false)
 
   useEffect(() => {
     sfxShow()
   }, [sfxShow])
+
+  useEvent("game:cooldown", (sec) => {
+    setSeconds(sec)
+  })
+
+  useEvent("game:cooldownPause", (isPaused) => {
+    setPaused(isPaused)
+  })
+
+  const percent = Math.max(0, Math.min(100, (seconds / cooldown) * 100))
 
   return (
     <section className="relative mx-auto flex h-full w-full max-w-7xl flex-1 flex-col items-center px-4">
@@ -29,10 +41,17 @@ const Question = ({ data: { question, image, media, cooldown } }: Props) => {
           alt={question}
         />
       </div>
-      <div
-        className="bg-primary mb-20 h-4 self-start justify-self-end rounded-full"
-        style={{ animation: `progressBar ${cooldown}s linear forwards` }}
-      ></div>
+      <div className="mb-20 h-4 w-full max-w-4xl self-start overflow-hidden rounded-full bg-white/30">
+        <div
+          className="h-full bg-primary transition-[width]"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      {paused && (
+        <div className="absolute bottom-6 right-6 rounded-md bg-black/60 px-3 py-1 text-sm font-semibold text-white">
+          Paused
+        </div>
+      )}
     </section>
   )
 }

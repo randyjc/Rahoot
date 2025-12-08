@@ -78,6 +78,10 @@ const Answers = ({
     setCooldown(sec)
   })
 
+  useEvent("game:cooldownPause", (isPaused) => {
+    setPaused(isPaused)
+  })
+
   useEvent("game:playerAnswer", (count) => {
     setTotalAnswer(count)
     sfxPop()
@@ -102,6 +106,11 @@ const Answers = ({
           <div className="flex flex-col items-center rounded-full bg-black/40 px-4 text-lg font-bold">
             <span className="translate-y-1 text-sm">Time</span>
             <span>{cooldown}</span>
+            {paused && (
+              <span className="text-xs font-semibold uppercase text-amber-200">
+                Paused
+              </span>
+            )}
           </div>
           <div className="flex flex-col items-center rounded-full bg-black/40 px-4 text-lg font-bold">
             <span className="translate-y-1 text-sm">Answers</span>

@@ -15,10 +15,21 @@ import { PropsWithChildren, useEffect, useState } from "react"
 type Props = PropsWithChildren & {
   statusName: Status | undefined
   onNext?: () => void
+  onPause?: () => void
+  paused?: boolean
+  showPause?: boolean
   manager?: boolean
 }
 
-const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
+const GameWrapper = ({
+  children,
+  statusName,
+  onNext,
+  onPause,
+  paused,
+  showPause,
+  manager,
+}: Props) => {
   const { isConnected } = useSocket()
   const { player } = usePlayerStore()
   const { questionStates, setQuestionStates } = useQuestionStore()
@@ -73,6 +84,17 @@ const GameWrapper = ({ children, statusName, onNext, manager }: Props) => {
                 onClick={handleNext}
               >
                 {next}
+              </Button>
+            )}
+
+            {manager && showPause && (
+              <Button
+                className={clsx("self-end bg-white px-4 text-black!", {
+                  "pointer-events-none": isDisabled,
+                })}
+                onClick={onPause}
+              >
+                {paused ? "Resume" : "Pause"}
               </Button>
             )}
           </div>

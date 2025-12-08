@@ -80,6 +80,15 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
     refreshMediaLibrary()
   })
 
+  useEvent("manager:quizzDeleted", (id) => {
+    toast.success("Quiz deleted")
+    if (selectedId === id) {
+      setSelectedId(null)
+      setDraft(null)
+    }
+    refreshMediaLibrary()
+  })
+
   useEvent("manager:quizzList", (list) => {
     onListUpdate(list)
   })
@@ -128,6 +137,13 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
       subject: "",
       questions: [blankQuestion()],
     })
+  }
+
+  const handleDeleteQuizz = () => {
+    if (!selectedId) return
+    if (!window.confirm("Delete this quiz?")) return
+    setSaving(true)
+    socket?.emit("manager:deleteQuizz", { id: selectedId })
   }
 
   const updateQuestion = (
@@ -445,15 +461,20 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
 
   return (
     <div className="flex w-full max-w-6xl flex-col gap-4 rounded-md bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button onClick={onBack} className="bg-gray-700">
-            Back
-          </Button>
-          <Button onClick={handleNew} className="bg-blue-600">
-            New quiz
-          </Button>
-        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button onClick={onBack} className="bg-gray-700">
+              Back
+            </Button>
+            <Button onClick={handleNew} className="bg-blue-600">
+              New quiz
+            </Button>
+            {selectedId && (
+              <Button className="bg-red-600" onClick={handleDeleteQuizz} disabled={saving}>
+                Delete quiz
+              </Button>
+            )}
+          </div>
 
         <Button onClick={handleSave} disabled={saving || loading}>
           {saving ? "Saving..." : "Save quiz"}
