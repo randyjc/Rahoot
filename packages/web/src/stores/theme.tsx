@@ -3,7 +3,9 @@ import { persist } from "zustand/middleware"
 
 type ThemeState = {
   backgroundUrl: string | null
+  brandName: string
   setBackground: (_url: string | null) => void
+  setBrandName: (_name: string) => void
   reset: () => void
 }
 
@@ -11,8 +13,10 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
       backgroundUrl: null,
+      brandName: "Rahoot",
       setBackground: (backgroundUrl) => set({ backgroundUrl }),
-      reset: () => set({ backgroundUrl: null }),
+      setBrandName: (brandName) => set({ brandName }),
+      reset: () => set({ backgroundUrl: null, brandName: "Rahoot" }),
     }),
     { name: "theme-preferences" },
   ),

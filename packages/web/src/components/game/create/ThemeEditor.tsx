@@ -20,7 +20,7 @@ type Props = {
 }
 
 const ThemeEditor = ({ onBack }: Props) => {
-  const { backgroundUrl, setBackground, reset } = useThemeStore()
+  const { backgroundUrl, brandName, setBackground, setBrandName, reset } = useThemeStore()
   const [customUrl, setCustomUrl] = useState("")
   const [items, setItems] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(false)
@@ -113,6 +113,24 @@ const ThemeEditor = ({ onBack }: Props) => {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-3 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-800">Branding</h3>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-semibold text-gray-600">
+              Brand name
+            </span>
+            <input
+              value={brandName}
+              onChange={(e) => setBrandName(e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              placeholder="e.g., Kwalitaria Pub Quiz"
+            />
+            <span className="text-xs text-gray-500">
+              Appears in the browser title bar and elsewhere we surface the brand.
+            </span>
+          </label>
+        </div>
+
         <div className="space-y-3 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-800">Preview</h3>
           <div className="relative h-60 w-full overflow-hidden rounded-md border border-gray-100 bg-gray-50">

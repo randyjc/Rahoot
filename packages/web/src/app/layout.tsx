@@ -1,4 +1,5 @@
 import Toaster from "@rahoot/web/components/Toaster"
+import BrandingHelmet from "@rahoot/web/components/BrandingHelmet"
 import { SocketProvider } from "@rahoot/web/contexts/socketProvider"
 import type { Metadata } from "next"
 import { Montserrat } from "next/font/google"
@@ -19,6 +20,7 @@ const RootLayout = ({ children }: PropsWithChildren) => (
   <html lang="en" suppressHydrationWarning={true} data-lt-installed="true">
     <body className={`${montserrat.variable} bg-secondary antialiased`}>
       <SocketProvider>
+        <BrandingHelmet />
         <main className="text-base-[8px] flex flex-col">{children}</main>
         <Toaster />
       </SocketProvider>
