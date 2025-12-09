@@ -97,18 +97,17 @@ const ThemeEditor = ({ onBack }: Props) => {
   }
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <div className="flex items-center justify-between rounded-md bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="rounded-md bg-gray-800 px-3 py-2 text-white shadow hover:bg-gray-700"
-          >
+    <div className="flex w-full max-w-6xl flex-col gap-4 rounded-md bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button onClick={onBack} className="bg-gray-700">
             Back
-          </button>
-          <div>
+          </Button>
+          <div className="flex flex-col leading-tight">
             <h2 className="text-lg font-semibold text-gray-900">Theme editor</h2>
-            <p className="text-xs text-gray-500">Set the game background from uploads or a custom URL.</p>
+            <p className="text-xs text-gray-500">
+              Set the game background from uploads or a custom URL.
+            </p>
           </div>
         </div>
       </div>

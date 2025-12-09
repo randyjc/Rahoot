@@ -7,6 +7,7 @@ import QuizEditor from "@rahoot/web/components/game/create/QuizEditor"
 import MediaLibrary from "@rahoot/web/components/game/create/MediaLibrary"
 import ThemeEditor from "@rahoot/web/components/game/create/ThemeEditor"
 import SelectQuizz from "@rahoot/web/components/game/create/SelectQuizz"
+import Button from "@rahoot/web/components/Button"
 import { useEvent, useSocket } from "@rahoot/web/contexts/socketProvider"
 import { useManagerStore } from "@rahoot/web/stores/manager"
 import { useRouter } from "next/navigation"
@@ -57,14 +58,15 @@ const Manager = () => {
 
   if (showMedia) {
     return (
-      <div className="flex w-full flex-col gap-4">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowMedia(false)}
-            className="rounded-md bg-gray-700 px-3 py-2 text-white"
-          >
+      <div className="flex w-full max-w-6xl flex-col gap-4 rounded-md bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setShowMedia(false)} className="bg-gray-700">
             Back
-          </button>
+          </Button>
+          <div className="flex flex-col leading-tight">
+            <h2 className="text-lg font-semibold text-gray-900">Media library</h2>
+            <p className="text-xs text-gray-500">Upload, view, and delete unused media.</p>
+          </div>
         </div>
         <MediaLibrary />
       </div>
