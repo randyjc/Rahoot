@@ -314,6 +314,10 @@ class Game {
       players: this.players,
     })
     socket.emit("game:totalPlayers", this.players.length)
+    if (this.breakActive) {
+      socket.emit("manager:break", true)
+      socket.emit("game:break", true)
+    }
 
     registry.reactivateGame(this.gameId)
     console.log(`Manager reconnected to game ${this.inviteCode}`)
@@ -365,6 +369,9 @@ class Game {
       },
     })
     socket.emit("game:totalPlayers", this.players.length)
+    if (this.breakActive) {
+      socket.emit("game:break", true)
+    }
     console.log(
       `Player ${player.username} reconnected to game ${this.inviteCode}`
     )

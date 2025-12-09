@@ -26,6 +26,7 @@ const ManagerGame = () => {
     useManagerStore()
   const { setQuestionStates } = useQuestionStore()
   const [cooldownPaused, setCooldownPaused] = useState(false)
+  const [breakActive, setBreakActive] = useState(false)
   const { players } = useManagerStore()
 
   useEvent("game:status", ({ name, data }) => {
@@ -73,6 +74,9 @@ const ManagerGame = () => {
     setCooldownPaused(isPaused)
   })
 
+  useEvent("game:break", (active) => setBreakActive(active))
+  useEvent("manager:break", (active) => setBreakActive(active))
+
   const handleSkip = () => {
     if (!gameId) {
       return
@@ -113,6 +117,11 @@ const ManagerGame = () => {
     } else {
       socket?.emit("manager:pauseCooldown", { gameId })
     }
+  }
+
+  const handleBreakToggle = () => {
+    if (!gameId) return
+    socket?.emit("manager:setBreak", { gameId, active: !breakActive })
   }
 
   const handleEndGame = () => {
@@ -173,6 +182,8 @@ const ManagerGame = () => {
       showPause={
         status?.name === STATUS.SHOW_QUESTION || status?.name === STATUS.SELECT_ANSWER
       }
+      onBreakToggle={handleBreakToggle}
+      breakActive={breakActive}
       onEnd={handleEndGame}
       players={players}
       manager

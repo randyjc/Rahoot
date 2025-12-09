@@ -21,6 +21,8 @@ type Props = PropsWithChildren & {
   onEnd?: () => void
   players?: { id: string; username: string; connected: boolean }[]
   manager?: boolean
+  onBreakToggle?: () => void
+  breakActive?: boolean
 }
 
 const GameWrapper = ({
@@ -33,6 +35,8 @@ const GameWrapper = ({
   onEnd,
   players,
   manager,
+  onBreakToggle,
+  breakActive,
 }: Props) => {
   const { isConnected } = useSocket()
   const { player } = usePlayerStore()
@@ -132,6 +136,17 @@ const GameWrapper = ({
                 onClick={onPause}
               >
                 {paused ? "Resume" : "Pause"}
+              </Button>
+            )}
+
+            {manager && onBreakToggle && (
+              <Button
+                className={clsx("self-end bg-white px-4 text-black!", {
+                  "pointer-events-none": isDisabled,
+                })}
+                onClick={onBreakToggle}
+              >
+                {breakActive ? "Resume game" : "Break"}
               </Button>
             )}
 
