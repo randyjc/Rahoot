@@ -218,7 +218,7 @@ io.on("connection", (socket) => {
 
   socket.on("player:selectedAnswer", ({ gameId, data }) =>
     withGame(gameId, socket, (game) =>
-      game.selectAnswer(socket, data.answerKey)
+      game.selectAnswer(socket, data.answerKeys)
     )
   )
 

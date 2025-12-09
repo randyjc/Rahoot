@@ -91,7 +91,7 @@ export interface ClientToServerEvents {
   "player:login": (_message: MessageWithoutStatus<{ username: string }>) => void
   "player:reconnect": (_message: { gameId: string }) => void
   "player:selectedAnswer": (
-    _message: MessageWithoutStatus<{ answerKey: number }>
+    _message: MessageWithoutStatus<{ answerKeys: number[] }>
   ) => void
 
   // Common

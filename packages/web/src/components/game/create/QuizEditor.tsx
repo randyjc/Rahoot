@@ -33,7 +33,7 @@ type MediaLibraryItem = {
 const blankQuestion = (): EditableQuestion => ({
   question: "",
   answers: ["", ""],
-  solution: 0,
+  solution: [0],
   cooldown: 5,
   time: 20,
 })
@@ -186,10 +186,14 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
       return
     }
     currentAnswers.splice(aIndex, 1)
-    let nextSolution = nextQuestions[qIndex].solution
-    if (nextSolution >= currentAnswers.length) {
-      nextSolution = currentAnswers.length - 1
-    }
+    const currentSolution = Array.isArray(nextQuestions[qIndex].solution)
+      ? nextQuestions[qIndex].solution
+      : [nextQuestions[qIndex].solution]
+    const adjusted = currentSolution
+      .filter((idx) => idx !== aIndex)
+      .map((idx) => (idx > aIndex ? idx - 1 : idx))
+    const nextSolution =
+      adjusted.length > 0 ? adjusted : [Math.max(0, currentAnswers.length - 1)]
     nextQuestions[qIndex] = {
       ...nextQuestions[qIndex],
       answers: currentAnswers,
@@ -735,30 +739,47 @@ const QuizEditor = ({ quizzList, onBack, onListUpdate }: Props) => {
                     </Button>
                   </div>
 
-                  <div className="grid gap-2 md:grid-cols-2">
-                    {question.answers.map((answer, aIndex) => (
-                      <div
-                        key={aIndex}
-                        className={clsx(
-                          "flex items-center gap-2 rounded-md border p-2",
-                          question.solution === aIndex
-                            ? "border-green-500"
-                            : "border-gray-200",
-                        )}
-                      >
-                        <input
-                          type="radio"
-                          name={`solution-${qIndex}`}
-                          checked={question.solution === aIndex}
-                          onChange={() =>
-                            updateQuestion(qIndex, { solution: aIndex })
+                <div className="grid gap-2 md:grid-cols-2">
+                  {question.answers.map((answer, aIndex) => (
+                    <div
+                      key={aIndex}
+                      className={clsx(
+                        "flex items-center gap-2 rounded-md border p-2",
+                        (Array.isArray(question.solution)
+                          ? question.solution.includes(aIndex)
+                          : question.solution === aIndex)
+                          ? "border-green-500"
+                          : "border-gray-200",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        name={`solution-${qIndex}-${aIndex}`}
+                        checked={
+                          Array.isArray(question.solution)
+                            ? question.solution.includes(aIndex)
+                            : question.solution === aIndex
+                        }
+                        onChange={(e) => {
+                          const current = Array.isArray(question.solution)
+                            ? question.solution
+                            : [question.solution]
+                          let next = current
+                          if (e.target.checked) {
+                            next = Array.from(new Set([...current, aIndex])).sort(
+                              (a, b) => a - b,
+                            )
+                          } else {
+                            next = current.filter((idx) => idx !== aIndex)
                           }
-                        />
-                        <Input
-                          className="flex-1"
-                          value={answer}
-                          onChange={(e) =>
-                            updateAnswer(qIndex, aIndex, e.target.value)
+                          updateQuestion(qIndex, { solution: next })
+                        }}
+                      />
+                      <Input
+                        className="flex-1"
+                        value={answer}
+                        onChange={(e) =>
+                          updateAnswer(qIndex, aIndex, e.target.value)
                           }
                           placeholder={`Answer ${aIndex + 1}`}
                         />

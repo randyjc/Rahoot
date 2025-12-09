@@ -8,7 +8,7 @@ export type Player = {
 
 export type Answer = {
   playerId: string
-  answerId: number
+  answerIds: number[]
   points: number
 }
 
@@ -19,7 +19,7 @@ export type Quizz = {
     image?: string
     media?: QuestionMedia
     answers: string[]
-    solution: number
+    solution: number | number[]
     cooldown: number
     time: number
   }[]

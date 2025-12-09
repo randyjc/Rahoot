@@ -125,10 +125,24 @@ class Game {
       id: "",
       connected: false,
     }))
-    game.round = snapshot.round || {
+    const round = snapshot.round || {
       playersAnswers: [],
       currentQuestion: 0,
       startTime: 0,
+    }
+    const migratedAnswers = Array.isArray(round.playersAnswers)
+      ? round.playersAnswers.map((a: any) => ({
+          ...a,
+          answerIds: Array.isArray(a.answerIds)
+            ? a.answerIds
+            : typeof a.answerId === "number"
+              ? [a.answerId]
+              : [],
+        }))
+      : []
+    game.round = {
+      ...round,
+      playersAnswers: migratedAnswers,
     }
     game.cooldown = {
       active: snapshot.cooldown?.active || false,
@@ -538,6 +552,8 @@ class Game {
       media: question.media,
       time: question.time,
       totalPlayer: this.players.length,
+      allowsMultiple:
+        Array.isArray(question.solution) && question.solution.length > 1,
     })
 
     await this.startCooldown(question.time)
@@ -557,9 +573,10 @@ class Game {
         : this.leaderboard.map((p) => ({ ...p }))
 
     const totalType = this.round.playersAnswers.reduce(
-      (acc: Record<number, number>, { answerId }) => {
-        acc[answerId] = (acc[answerId] || 0) + 1
-
+      (acc: Record<number, number>, { answerIds }) => {
+        answerIds.forEach((id) => {
+          acc[id] = (acc[id] || 0) + 1
+        })
         return acc
       },
       {}
@@ -571,8 +588,16 @@ class Game {
           (a) => a.playerId === player.id
         )
 
+        const correctAnswers = Array.isArray(question.solution)
+          ? Array.from(new Set(question.solution))
+          : [question.solution]
+
         const isCorrect = playerAnswer
-          ? playerAnswer.answerId === question.solution
+          ? (() => {
+              const chosen = Array.from(new Set(playerAnswer.answerIds))
+              if (chosen.length !== correctAnswers.length) return false
+              return correctAnswers.every((id: number) => chosen.includes(id))
+            })()
           : false
 
         const points =
@@ -615,7 +640,7 @@ class Game {
     this.round.playersAnswers = []
     this.persist()
   }
-  selectAnswer(socket: Socket, answerId: number) {
+  selectAnswer(socket: Socket, answerIds: number[]) {
     const player = this.players.find((player) => player.id === socket.id)
     const question = this.quizz.questions[this.round.currentQuestion]
 
@@ -627,9 +652,17 @@ class Game {
       return
     }
 
+    const uniqueAnswers = Array.from(new Set(answerIds)).filter(
+      (id) => !Number.isNaN(id)
+    )
+
+    if (uniqueAnswers.length === 0) {
+      return
+    }
+
     this.round.playersAnswers.push({
       playerId: player.id,
-      answerId,
+      answerIds: uniqueAnswers,
       points: timeToPoint(this.round.startTime, question.time),
     })
 

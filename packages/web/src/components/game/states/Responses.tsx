@@ -67,6 +67,10 @@ const Responses = ({
     stopMusic()
   }, [playMusic, stopMusic])
 
+  const correctSet = new Set(
+    Array.isArray(correct) ? correct : typeof correct === "number" ? [correct] : [],
+  )
+
   return (
     <div className="flex h-full flex-1 flex-col justify-between">
       <div className="mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
@@ -107,7 +111,7 @@ const Responses = ({
             <AnswerButton
               key={key}
               className={clsx(ANSWERS_COLORS[key], {
-                "opacity-65": responses && correct !== key,
+                "opacity-65": responses && !correctSet.has(key),
               })}
               icon={ANSWERS_ICONS[key]}
             >

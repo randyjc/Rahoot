@@ -21,7 +21,15 @@ type Props = {
 }
 
 const Answers = ({
-  data: { question, answers, image, media, time, totalPlayer },
+  data: {
+    question,
+    answers,
+    image,
+    media,
+    time,
+    totalPlayer,
+    allowsMultiple,
+  },
 }: Props) => {
   const { gameId }: { gameId?: string } = useParams()
   const { socket } = useSocket()
@@ -31,6 +39,8 @@ const Answers = ({
   const [paused, setPaused] = useState(false)
   const [totalAnswer, setTotalAnswer] = useState(0)
   const [isMediaPlaying, setIsMediaPlaying] = useState(false)
+  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([])
+  const [submitted, setSubmitted] = useState(false)
 
   const [sfxPop] = useSound(SFX_ANSWERS_SOUND, {
     volume: 0.1,
@@ -45,18 +55,37 @@ const Answers = ({
     },
   )
 
-  const handleAnswer = (answerKey: number) => () => {
-    if (!player) {
+  const submitAnswers = (keys: number[]) => {
+    if (!player || submitted || keys.length === 0) {
       return
     }
 
     socket?.emit("player:selectedAnswer", {
       gameId,
       data: {
-        answerKey,
+        answerKeys: keys,
       },
     })
+    setSubmitted(true)
     sfxPop()
+  }
+
+  const handleAnswer = (answerKey: number) => () => {
+    if (!player) {
+      return
+    }
+
+    if (!allowsMultiple) {
+      setSelectedAnswers([answerKey])
+      submitAnswers([answerKey])
+      return
+    }
+
+    setSelectedAnswers((prev) =>
+      prev.includes(answerKey)
+        ? prev.filter((key) => key !== answerKey)
+        : [...prev, answerKey],
+    )
   }
 
   useEffect(() => {
@@ -88,12 +117,25 @@ const Answers = ({
     sfxPop()
   })
 
+  useEffect(() => {
+    setCooldown(time)
+    setPaused(false)
+    setSelectedAnswers([])
+    setSubmitted(false)
+    setTotalAnswer(0)
+  }, [question, time])
+
   return (
     <div className="flex h-full flex-1 flex-col justify-between">
       <div className="mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
         <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">
           {question}
         </h2>
+        {allowsMultiple && (
+          <p className="rounded-full bg-black/40 px-4 py-2 text-sm font-semibold text-white">
+            Select all correct answers, then submit.
+          </p>
+        )}
 
         <QuestionMedia
           media={media || (image ? { type: "image", url: image } : undefined)}
@@ -128,11 +170,29 @@ const Answers = ({
               className={clsx(ANSWERS_COLORS[key])}
               icon={ANSWERS_ICONS[key]}
               onClick={handleAnswer(key)}
+              disabled={submitted}
+              selected={selectedAnswers.includes(key)}
             >
               {answer}
             </AnswerButton>
           ))}
         </div>
+        {allowsMultiple && (
+          <div className="mx-auto flex w-full max-w-7xl justify-end px-2">
+            <button
+              type="button"
+              onClick={() => submitAnswers(selectedAnswers)}
+              disabled={submitted || selectedAnswers.length === 0}
+              className={clsx(
+                "rounded bg-white/80 px-4 py-2 text-sm font-semibold text-slate-900 shadow-md transition hover:bg-white",
+                (submitted || selectedAnswers.length === 0) &&
+                  "cursor-not-allowed opacity-60",
+              )}
+            >
+              {submitted ? "Submitted" : "Submit answers"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

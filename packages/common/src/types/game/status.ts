@@ -31,6 +31,7 @@ export type CommonStatusDataMap = {
     media?: QuestionMedia
     time: number
     totalPlayer: number
+    allowsMultiple: boolean
   }
   SHOW_RESULT: {
     correct: boolean
@@ -49,7 +50,7 @@ type ManagerExtraStatus = {
   SHOW_RESPONSES: {
     question: string
     responses: Record<number, number>
-    correct: number
+    correct: number | number[]
     answers: string[]
     image?: string
     media?: QuestionMedia
