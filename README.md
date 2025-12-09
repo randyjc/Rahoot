@@ -161,8 +161,8 @@ Tip: You can now create and edit quizzes directly from the Manager UI (login at 
 - Manual “Set timing from media” to align cooldown/answer time with clip length.
 - Media library view: see all uploads, where they’re used, and delete unused files.
 - Delete quizzes from the editor.
-- Pause/Resume/Skip question intro and answer timers; End Game button to reset everyone.
-- Player list in manager view showing connected/disconnected players.
+- Pause/Resume/Break/Skip question intro and answer timers; End Game button to reset everyone.
+- Player list in manager view showing connected/disconnected players (persists across reconnects); resume a game from where it left off.
 - Click-to-zoom images during questions.
 - Player reconnect resilience: Redis snapshotting keeps game state; clients auto-rejoin using stored `clientId`/last game; username/points are hydrated locally after refresh without a manual reload.
 
